@@ -1,0 +1,42 @@
+import pygame
+import math
+import random
+
+xs = 600
+ys = 450
+xt = xs - 100
+yt = ys + 100
+dt = 1.0
+BLACK = (0,0,0)
+TRACK_WIDTH = 200
+TRACK_LENGTH = 700  
+START = 300
+class Track():
+    def Load(self,path,NF):
+       #Compose Track of Rectangles 
+       r1_x_end = START+TRACK_LENGTH
+       r1_y_end = START+TRACK_WIDTH
+
+       r1 = pygame.Rect(START,START,r1_x_end,r1_y_end)
+
+       r2_x_end = r1_x_end-TRACK_WIDTH
+       r2_y_end = r1_y_end+TRACK_LENGTH
+
+       r2 = pygame.Rect(r1_x_end,r1_y_end,r2_x_end,r2_y_end)
+
+       r3_x_end = r2_x_end-TRACK_LENGTH
+       r3_y_end = r2_y_end+TRACK_WIDTH
+
+       r3 = pygame.Rect(r2_x_end,r2_y_end,r3_x_end,r3_y_end)
+
+       r4_x_end = r3_x_end+TRACK_WIDTH
+       r4_y_end = r3_y_end-TRACK_LENGTH
+
+       r4 = pygame.Rect(r3_x_end,r3_y_end,r4_x_end,r4_y_end)
+
+       self.track = (r1,r2,r3,r4)
+
+    def Draw(self,car_pos)
+  		
+  		for i in len(track):
+  			
