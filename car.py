@@ -18,6 +18,11 @@ msg += ["GEAR 1"]
 msg += ["GEAR 2"]
 msg += ["GEAR 3"]
 msg += ["GEAR 4"]
+
+BLUE = (  0,   0, 255)
+GREEN = (  0,   255, 0)
+
+DIST_THRESH = 200 
 n = len(msg)
 gears = []
 for i in range(n):
@@ -67,6 +72,8 @@ class Sprite():
         if view < 0 :
             view = view + 360
         view = view%360
+        self.car_pos = [x,y]
+        self.screen = screen
         screen.blit(self.images[view],(x-32,y-32))
         #screen.blit(gears[self.gear],(xt,yt))
         indicated = int(10.0*self.speed)
@@ -76,35 +83,95 @@ class Sprite():
             elapsed_time = font.render(str(frames/24),1,(250,250,250))
             #screen.blit(elapsed_time,(xt+100,yt+50))
 
+    def getRotate(self,d_cords):
+        #convert to radians 
+        theta = self.view/57.296
+        rot_mat = np.matrix([[math.cos(theta),-math.sin(theta)],\
+                             [math.sin(theta),math.cos(theta)]])     
+        
+        dif = np.array([d_cords - self.cords]) 
+        dif = dif/LA.norm(dif)
+        rot_d_car = dif.T
+        rot_d_car_cord = rot_mat*dif.T
+        #rot_d_car = rot_d_car/LA.norm(rot_d_car)
+        #print "ROT", rot_d_car,LA.norm(rot_d_car)
 
+        perp = np.array([[1,0]])
+        perp = rot_mat*perp.T
+
+        #IPython.embed()
+        theta = math.acos(perp.T*rot_d_car)
+        #return [theta,rot_d_car,perp]
+
+        front = np.array([[0,1]])
+        back = np.array([[0,-1]])
+
+        front = rot_mat*front.T
+        back = rot_mat*back.T
+
+        dist_f = LA.norm(front-rot_d_car)
+        dist_b = LA.norm(back-rot_d_car)
+
+
+
+        if(dist_f > dist_b):
+            return [theta,rot_d_car,perp]
+        else: 
+            return [0,rot_d_car,perp]
+
+    def sort_func(self,d):
+        return d[0]
 
     def getState(self,track,dummycars):
-        state = np.zeros(3) 
-        state[0] = self.view 
-        state[1:3] = self.cords 
+        state = np.zeros(2) 
+        state[0:2] = self.cords
         #state[1:3] = track.getDistance(self.xc,self.yc)
-        dist = []
-        #for d_car in dummycars:
-        #    state = np.hstack((state,d_car.cords))
-        #    d = LA.norm(d_car.cords -self.cords)
-        #    p_d = LA.norm(d_car.pre_cords - self.pre_cords)
-        #   if(d <= p_d):
-        #       dist.append(d)
+        dist_list = []
+        for d_car in dummycars:
+            d = np.zeros(2)
+            dist = LA.norm(d_car.cords -self.cords)
+            theta,vec,perp = self.getRotate(d_car.cords)
+          
+            if(dist < DIST_THRESH and theta > 0):
+                d[0] = dist 
+                d[1] = theta 
+                #IPython.embed()
+                print "ROT",vec
+                print "PERP",perp
+                print "THETA", theta*57.296
+                endpoint = self.car_pos+perp.T*20
+                endpoint = [endpoint[0,0],endpoint[0,1]]
+
+                pygame.draw.line(self.screen,GREEN,self.car_pos,endpoint,10)
+
+                endpoint = self.car_pos+vec.T*20
+                endpoint = [endpoint[0,0],endpoint[0,1]]
+
+                
+                pygame.draw.line(self.screen,BLUE,self.car_pos,endpoint,10)
+                  
+            dist_list.append(d)
 
 
-        #dist.sort()
-        #state[3:7] = track.getCorners(self.xc,self.yc)
+        dist_list = sorted(dist_list,reverse = True, key = self.sort_func)
+        cars = dist_list[0:1]
+        #for c in cars: 
+           # state = np.hstack([state,c])
+            
+        
         return state
 
     def Update(self):
         self.speed = .95*self.speed + .05*(2.5*self.gear)
         print self.gear,'\t',int(10.0*self.speed),'\t',self.lap
         
+        #convert to radians 
         theta = self.view/57.296
         if self.wobble :
             idle_sound.set_volume(1.)
         else :
             idle_sound.set_volume(0)
+
         vx = self.speed*math.sin(theta)
         vy = -self.speed*math.cos(theta)
         self.xf = self.xf + vx*dt

@@ -19,10 +19,11 @@ import time
 
 
 #import movie
-#screen_size = (1200,900)
-screen_size = (1200,900)
+screen_size = (500,500)
+
+#screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
-MAX_LAPS = 5
+MAX_LAPS = 2
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
 clock = pygame.time.Clock()
@@ -37,7 +38,7 @@ car.ys = screen_size[1]/2;
 track_f = pygame.image.load('track.png')
 xs = 600
 ys = 450
-xt = 900
+xt = 100
 yt = 20
 
 
@@ -47,7 +48,7 @@ trk = track_f.get_at((0,0))
 Track = track.Track()
 Track.Load()
 red.Load('red',360,Track.returnStart())
-car_list = Track.genCars(4*0)
+car_list = Track.genCars(4*5)
 dummy_cars = []
 for car_p in car_list:
     d_car = dummy_car.Sprite()
@@ -58,15 +59,19 @@ for car_p in car_list:
 inbox = trap.collidepoint(red.xc,red.yc)
 lap = 0
 #pdb.set_trace()
-frames = 0
-robot = learner.Learner()
-robot.Load()
-
 first_frame = True 
-intial_training = False
+intial_training = True
 robot_only = False
 
-time.sleep(12)
+
+frames = 0
+robot = learner.Learner()
+if(not intial_training):
+    robot.Load()
+
+
+
+#time.sleep(12)
 
 while running:
     clock.tick(24)
@@ -83,6 +88,11 @@ while running:
             inbox = 0
     else :
         inbox = 1
+    print screen
+    A = np.zeros((500,500))
+    
+
+
     screen.blit(visible_track,(car.xs-red.xc,car.ys-red.yc))
     Track.Draw(screen,(red.xc-car.xs,red.yc-car.ys))
     
@@ -101,7 +111,7 @@ while running:
         ask_for_help = robot.askForHelp(state)
 
     if((intial_training or ask_for_help == -1) and not robot_only):
-        print "HUMAN TAKE OVER!!!"
+
         text = font.render("Human Control",1,(255,0,0))
         screen.blit(text,(xt-20,yt))
         key = pygame.key.get_pressed()
@@ -117,7 +127,7 @@ while running:
             a = np.array([2])    
     else: 
         a = robot.getAction(state)
-        print "Robot Action",a[0]
+      
         text = font.render("Robot Control",1,(0,0,255))
         screen.blit(text,(xt,yt))
 
@@ -132,26 +142,29 @@ while running:
             a = np.array([2])
 
     pygame.display.flip()
-    if((intial_training or ask_for_help == -1) and not robot_only):
+    if((intial_training or ask_for_help == 1 or first_frame) and not robot_only):
         if(first_frame):
-            States = state
+            img = pygame.surfarray.array2d(screen)
+            States = []
+            States.append(np.ravel(img))
             Actions = np.array([a[0]])
             first_frame = False 
         else:
-            States = np.vstack((States,state))
+            img = pygame.surfarray.array2d(screen)
+            States.append(np.ravel(img))
+            
             Actions = np.vstack((Actions,a))  
    
     if(Track.getLap(red.xc,red.yc)> past_lap and not intial_training and not robot_only):
         first_frame = True;
         robot.updateModel(States,Actions)
-
-    
+   
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
         if(intial_training):
-            robot.States = States
+            robot.States = robot.listToMat(States)
             robot.Actions = Actions 
-        robot.saveModel()
-        exit()
+            robot.trainModel(robot.States,robot.Actions)
+            intial_training = False
 
     if not Track.IsOnTrack(red) :
         red.wobble = 10
