@@ -32,7 +32,7 @@ class Learner():
 		self.States = pickle.load(open('states.p','rb'))
 		self.Actions = pickle.load(open('actions.p','rb')) 
 		self.Weights = np.zeros(self.Actions.shape)+1
-		self.trainModel(self.States,self.Actions)
+
 
 
 	def trainModel(self,States,Action):
@@ -153,3 +153,4 @@ class Learner():
 	def saveModel(self):
 		pickle.dump(self.States,open('states.p','wb'))
 		pickle.dump(self.Actions,open('actions.p','wb'))
+

@@ -19,11 +19,13 @@ import time
 
 
 #import movie
+
 screen_size = (500,500)
 
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
 MAX_LAPS = 2
+
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
 clock = pygame.time.Clock()
@@ -38,7 +40,9 @@ car.ys = screen_size[1]/2;
 track_f = pygame.image.load('track.png')
 xs = 600
 ys = 450
+
 xt = 100
+
 yt = 20
 
 
@@ -48,7 +52,9 @@ trk = track_f.get_at((0,0))
 Track = track.Track()
 Track.Load()
 red.Load('red',360,Track.returnStart())
+
 car_list = Track.genCars(4*5)
+
 dummy_cars = []
 for car_p in car_list:
     d_car = dummy_car.Sprite()
@@ -59,6 +65,7 @@ for car_p in car_list:
 inbox = trap.collidepoint(red.xc,red.yc)
 lap = 0
 #pdb.set_trace()
+
 first_frame = True 
 intial_training = True
 robot_only = False
@@ -70,8 +77,6 @@ if(not intial_training):
     robot.Load()
 
 
-
-#time.sleep(12)
 
 while running:
     clock.tick(24)
@@ -88,10 +93,6 @@ while running:
             inbox = 0
     else :
         inbox = 1
-    print screen
-    A = np.zeros((500,500))
-    
-
 
     screen.blit(visible_track,(car.xs-red.xc,car.ys-red.yc))
     Track.Draw(screen,(red.xc-car.xs,red.yc-car.ys))
@@ -127,7 +128,7 @@ while running:
             a = np.array([2])    
     else: 
         a = robot.getAction(state)
-      
+
         text = font.render("Robot Control",1,(0,0,255))
         screen.blit(text,(xt,yt))
 
@@ -142,6 +143,7 @@ while running:
             a = np.array([2])
 
     pygame.display.flip()
+
     if((intial_training or ask_for_help == 1 or first_frame) and not robot_only):
         if(first_frame):
             img = pygame.surfarray.array2d(screen)
@@ -153,12 +155,13 @@ while running:
             img = pygame.surfarray.array2d(screen)
             States.append(np.ravel(img))
             
+
             Actions = np.vstack((Actions,a))  
    
     if(Track.getLap(red.xc,red.yc)> past_lap and not intial_training and not robot_only):
         first_frame = True;
         robot.updateModel(States,Actions)
-   
+
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
         if(intial_training):
             robot.States = robot.listToMat(States)

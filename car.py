@@ -23,6 +23,7 @@ BLUE = (  0,   0, 255)
 GREEN = (  0,   255, 0)
 
 DIST_THRESH = 200 
+
 n = len(msg)
 gears = []
 for i in range(n):
@@ -72,8 +73,10 @@ class Sprite():
         if view < 0 :
             view = view + 360
         view = view%360
+
         self.car_pos = [x,y]
         self.screen = screen
+
         screen.blit(self.images[view],(x-32,y-32))
         #screen.blit(gears[self.gear],(xt,yt))
         indicated = int(10.0*self.speed)
@@ -82,6 +85,7 @@ class Sprite():
         if self.lap > MAX_LAPS :
             elapsed_time = font.render(str(frames/24),1,(250,250,250))
             #screen.blit(elapsed_time,(xt+100,yt+50))
+
 
     def getRotate(self,d_cords):
         #convert to radians 
@@ -158,14 +162,13 @@ class Sprite():
         #for c in cars: 
            # state = np.hstack([state,c])
             
-        
         return state
 
     def Update(self):
         self.speed = .95*self.speed + .05*(2.5*self.gear)
         print self.gear,'\t',int(10.0*self.speed),'\t',self.lap
         
-        #convert to radians 
+
         theta = self.view/57.296
         if self.wobble :
             idle_sound.set_volume(1.)

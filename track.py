@@ -12,7 +12,9 @@ dt = 1.0
 BLACK = (0,0,0)
 BLUE = (  0,   0, 255)
 TRACK_WIDTH = 200
+
 TRACK_LENGTH = 1250
+
 START = 0
 ANGLES = [0,math.pi/2,math.pi,3*math.pi/2]  
 class Track():
@@ -42,6 +44,7 @@ class Track():
        r4 = pygame.Rect(r4_x,r4_y,TRACK_WIDTH,TRACK_LENGTH)
 
        self.track = [r1,r2,r3,r4]
+
 
        random.seed(10)
 
