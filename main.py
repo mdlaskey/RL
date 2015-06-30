@@ -18,13 +18,14 @@ import track
 import time
 
 
+
 #import movie
 
 screen_size = (500,500)
 
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
-MAX_LAPS = 2
+MAX_LAPS = 1
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
@@ -146,15 +147,15 @@ while running:
 
     if((intial_training or ask_for_help == 1 or first_frame) and not robot_only):
         if(first_frame):
-            img = pygame.surfarray.array2d(screen)
+            img = pygame.surfarray.array3d(screen)
             States = []
-            States.append(np.ravel(img))
+            States.append(img)
             Actions = np.array([a[0]])
             first_frame = False 
         else:
-            img = pygame.surfarray.array2d(screen)
-            States.append(np.ravel(img))
-            
+            img = pygame.surfarray.array3d(screen)
+
+            States.append(img)
 
             Actions = np.vstack((Actions,a))  
    
@@ -164,8 +165,9 @@ while running:
 
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
         if(intial_training):
-            robot.States = robot.listToMat(States)
-            robot.Actions = Actions 
+            #robot.States = robot.listToMat(States)
+            robot.States = np.array(States)
+            robot.Actions = np.array(Actions) 
             robot.trainModel(robot.States,robot.Actions)
             intial_training = False
 

@@ -11,6 +11,21 @@ from sklearn import metrics
 from scipy.sparse import csr_matrix
 from scipy.sparse import vstack
 
+import sys
+
+# Make sure that caffe is on the python path:
+sys.path.append('/home/wesley/caffe/python')
+
+import caffe
+import os
+import h5py
+import shutil
+import tempfile
+
+import random
+
+# OpenCV
+import cv2
 
 class Learner():
 
@@ -20,6 +35,15 @@ class Learner():
 	gamma_clf = 1e-3
 	first_time = True 
 	iter_  = 1
+
+	# Neural net implementation
+	neural = True
+
+	# Assumes current directory is "RL/"
+	NET_SUBDIR = os.getcwd() + '/net/'
+	SOLVER_FILE = os.path.join(NET_SUBDIR, 'net_solver.prototxt')
+	MODEL_FILE = os.path.join(NET_SUBDIR, 'net_model.prototxt')
+	TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_1000.caffemodel')
 
 	def Load(self,gamma = 1e-3):
 		self.States = pickle.load(open('states.p','rb'))
@@ -33,41 +57,94 @@ class Learner():
 		self.Actions = pickle.load(open('actions.p','rb')) 
 		self.Weights = np.zeros(self.Actions.shape)+1
 
+	def split_training_test(self, States, Action):
+		"""
+		Splits the states/action pairs into
+		training/test sets of 80/20 percent.
+		"""
+		total_size = len(States)
+		train_size = int(total_size * 0.8)
+
+		train_indices = random.sample([i for i in range(total_size)], train_size)
+		test_indices = [i for i in range(total_size) if i not in train_indices]
+
+		train_states = np.array([np.array(States[i]).astype(np.float32) for i in train_indices])
+		train_actions = np.array([Action[i] for i in train_indices]).astype(np.float32)
+		test_states = np.array([np.array(States[i]).astype(np.float32) for i in test_indices])
+		test_actions = np.array([Action[i] for i in test_indices]).astype(np.float32)
+
+		return train_states, train_actions, test_states, test_actions
+
+	def output_images(self, States, Action):
+		"""
+		Downsamples the states twice.
+		Outputs the given states/actions into
+		image files for neural net training in Caffe.
+		"""
+		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))) for img in States]
+
+		train_states, train_actions, test_states, test_actions = \
+			self.split_training_test(downsampled_states, Action)
+		# train/test.txt should be a list of image files / actions to be read
+		with open(os.path.join(self.NET_SUBDIR, 'train.txt'), 'w') as f:
+			for i in range(len(train_states)):
+				train_filename = self.NET_SUBDIR + 'train_images/' + 'train_img_{0}.png'.format(i)
+				cv2.imwrite(train_filename, train_states[i])
+				f.write(train_filename + " " + str(train_actions[i]) + '\n')
+
+		with open(os.path.join(self.NET_SUBDIR, 'test.txt'), 'w') as f:
+			for i in range(len(test_states)):
+				test_filename = self.NET_SUBDIR + 'test_images/' + 'test_img_{0}.png'.format(i)
+				cv2.imwrite(test_filename, test_states[i])
+				f.write(test_filename + " " + str(test_actions[i]) + '\n')
 
 
-	def trainModel(self,States,Action):
-		self.clf = svm.LinearSVC()
-		self.novel = svm.OneClassSVM()
-	
+
+	def trainModel(self, States, Action):
+		"""
+		Trains model on given states and actions.
+		Uses neural net or SVM based on global
+		settings.
+		"""
+		States, Action = States[1:], Action[1:]
+		print "States.shape"
 		print States.shape
+		print "Action.shape"
 		print Action.shape
-	
+
 		Action = np.ravel(Action)
-		
-		
-		self.clf.class_weight = 'auto'
+
+		if self.neural:
+			# Neural net implementation
+			self.output_images(States, Action)
+
+			# Change to "caffe.set_mode_gpu() for GPU mode"
+			caffe.set_mode_cpu()
+			solver = caffe.get_solver(self.SOLVER_FILE)
+			solver.solve()
+		else:
+			# Original SVC implementation
+			self.clf = svm.LinearSVC()
+			self.clf.class_weight = 'auto'
+			self.clf.C = 1e-2
+			self.clf.fit(States, Action)
+
+		"""
+		# Original novel implementation
+		self.novel = svm.OneClassSVM()
 
 		self.novel.gamma = self.gamma
-
-		self.clf.C = 1e-2
-		
-
-		self.clf.fit(States,Action)
-		#SVM parameters computed via cross validation
-	
-		
 		self.novel.nu = 1e-3
 		self.novel.kernel = 'rbf'
 		self.novel.verbose = False
 		self.novel.shrinking = False
 		self.novel.max_iter = 3000
-		
 
-		#self.novel.fit(self.supStates)
-		print self.novel.gamma
-		
-		if(self.verbose):
-			self.debugPolicy(States,Action)
+		self.novel.fit(self.supStates)
+
+		if (self.verbose):
+			self.debugPolicy(States, Action)
+		"""
 	
 
 	def getScoreNovel(self,States):
@@ -102,9 +179,26 @@ class Learner():
 	def getPrecision(self):
 		return self.precision
 
- 	def getAction(self,state):
- 		state = csr_matrix(state)
-		return self.clf.predict(state)
+ 	def getAction(self, state):
+		"""
+		Returns a prediction given the input state.
+		Uses neural net or SVM based on global
+		settings.
+		"""
+		if self.neural:
+			net = caffe.Net (self.MODEL_FILE,self.TRAINED_MODEL,caffe.TEST)
+			# Caffe takes in 4D array inputs.
+			data4D = np.zeros([1,3,500,500])
+			# Fill in last 3 dimensions
+			data4D[0] = cv2.pyrDown((cv2.pyrDown(state)))
+			# Forward call creates a dictionary corresponding to the layers
+			pred_dict = net.forward_all(data=data4D)
+			# 'prob' layer contains actions and their respective probabilities
+			prediction = pred_dict['prob'].argmax()
+			return prediction
+		else:
+			state = csr_matrix(state)
+			return self.clf.predict(state)
 
 	def askForHelp(self,state):
 		
