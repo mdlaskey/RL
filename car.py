@@ -55,8 +55,11 @@ class Sprite():
         self.gear = 3
         self.wobble = 0
         self.lap = 0
+        self.pastId = 0
         self.cords = np.array([self.xf,self.yf])
         self.pre_cords = self.cords
+        self.carsHit = 0
+        self.timeOffTrack = 0
         for f in range(NF):
             nv = len(str(f+1))
             name = path+'/fr_'
@@ -146,14 +149,9 @@ class Sprite():
                 endpoint = self.car_pos+perp.T*20
                 endpoint = [endpoint[0,0],endpoint[0,1]]
 
-                pygame.draw.line(self.screen,GREEN,self.car_pos,endpoint,10)
-
                 endpoint = self.car_pos+vec.T*20
                 endpoint = [endpoint[0,0],endpoint[0,1]]
 
-                
-                pygame.draw.line(self.screen,BLUE,self.car_pos,endpoint,10)
-                  
             dist_list.append(d)
 
 
@@ -163,6 +161,18 @@ class Sprite():
            # state = np.hstack([state,c])
             
         return state
+
+    def updateStats(self,track,dummycars):
+        for d_car in dummycars:
+            d = np.zeros(2)
+            dist = LA.norm(d_car.cords -self.cords)
+            if(dist < 15 and d_car.id != self.pastId):
+                self.carsHit += 1
+                self.pastId = d_car.id 
+        
+        if(not track.IsOnTrack(self)):
+            self.timeOffTrack +=1 
+
 
     def Update(self):
         self.speed = .95*self.speed + .05*(2.5*self.gear)

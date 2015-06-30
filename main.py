@@ -25,7 +25,8 @@ screen_size = (500,500)
 
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
-MAX_LAPS = 1
+
+MAX_LAPS = 5
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
@@ -83,7 +84,7 @@ while running:
     clock.tick(24)
     frames = frames + 1
     car.frames = frames
-    screen.fill((0,192,0))
+    screen.fill((0,0,0))
     past_lap = Track.getLap(red.xc,red.yc)
     red.Update()
     print red.xc,red.yc
@@ -104,7 +105,7 @@ while running:
 
     red.Draw(car.xs,car.ys,screen)
 
-
+    red.updateStats(Track,dummy_cars)
     state = red.getState(Track,dummy_cars)
     print "STATE",state
 
@@ -164,6 +165,7 @@ while running:
         robot.updateModel(States,Actions)
 
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
+        IPython.embed()
         if(intial_training):
             #robot.States = robot.listToMat(States)
             robot.States = np.array(States)
