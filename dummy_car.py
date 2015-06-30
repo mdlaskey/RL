@@ -4,6 +4,7 @@ import random
 import IPython
 import track
 import numpy as np
+
 xs = 600
 ys = 450
 xt = xs - 100
@@ -41,6 +42,7 @@ class Sprite():
 #        self.yc = 2400
         self.xc = xs
         self.yc = ys
+        self.id = xs 
         self.xf = float(self.xc)
         self.yf = float(self.yc)
         self.x_s = 0

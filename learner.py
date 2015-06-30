@@ -132,14 +132,12 @@ class Learner():
 		#self.States = new_states
 		#self.Actions = new_actions
 		new_states = csr_matrix(new_states)
-		if(self.option_1):
-			self.trainModel(new_states,new_actions)
-		else:
-			self.States = vstack((self.States,new_states))
-			self.supStates = np.vstack((self.supStates,new_states.todense()))
-			self.Actions = np.vstack((self.Actions,new_actions))
-			self.Weights = np.vstack((self.Weights,weights))
-			self.trainModel(self.States,self.Actions)
+		
+		self.States = vstack((self.States,new_states))
+		self.supStates = np.vstack((self.supStates,new_states.todense()))
+		self.Actions = np.vstack((self.Actions,new_actions))
+		self.Weights = np.vstack((self.Weights,weights))
+		self.trainModel(self.States,self.Actions)
 
 	def listToMat(self,States):
 

@@ -15,7 +15,7 @@ TRACK_WIDTH = 200
 
 TRACK_LENGTH = 1250
 
-START = 0
+START = 250
 ANGLES = [0,math.pi/2,math.pi,3*math.pi/2]  
 class Track():
 
@@ -71,8 +71,18 @@ class Track():
       cars_per_track = num_cars/4
       car_list = []
       for tr in self.track:
+        width = tr.right-20 - tr.left+20
+        height = tr.top+20 - tr.bottom-20 
+        widthInt = width/5
+        heightInt = height/3
+        heightPos = range(tr.bottom-20,tr.top+20,heightInt)
+        widthPos = range(tr.left+20,tr.right-20,widthInt)
+
         for i in range(cars_per_track):
-          car = [random.randint(tr.left+20, tr.right-20),random.randint(tr.top+20,tr.bottom-20)]
+          
+          hP = random.randint(0,len(heightPos)-1)
+          wP = random.randint(0,len(widthPos)-1)
+          car = [heightPos[hP],widthPos[wP]]
           car_list.append(car)
 
       return car_list 
