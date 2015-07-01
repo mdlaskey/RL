@@ -46,11 +46,13 @@ class Learner():
 	TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_1000.caffemodel')
 
 	def Load(self,gamma = 1e-3):
-		self.States = pickle.load(open('states.p','rb'))
-		self.Actions = pickle.load(open('actions.p','rb'))
-		self.Weights = np.zeros(self.Actions.shape)+1
-		self.gamma = gamma 
-		self.trainModel(self.States,self.Actions)
+		if not self.neural:
+			self.States = pickle.load(open('states.p','rb'))
+			self.Actions = pickle.load(open('actions.p','rb'))
+			self.Weights = np.zeros(self.Actions.shape)+1
+			self.gamma = gamma
+			self.trainModel(self.States,self.Actions)
+
 		
 	def clearModel(self):
 		self.States = pickle.load(open('states.p','rb'))
@@ -188,14 +190,14 @@ class Learner():
 		if self.neural:
 			net = caffe.Net (self.MODEL_FILE,self.TRAINED_MODEL,caffe.TEST)
 			# Caffe takes in 4D array inputs.
-			data4D = np.zeros([1,3,500,500])
+			data4D = np.zeros([1,3,125,125])
 			# Fill in last 3 dimensions
 			data4D[0] = cv2.pyrDown((cv2.pyrDown(state)))
 			# Forward call creates a dictionary corresponding to the layers
 			pred_dict = net.forward_all(data=data4D)
 			# 'prob' layer contains actions and their respective probabilities
 			prediction = pred_dict['prob'].argmax()
-			return prediction
+			return [prediction]
 		else:
 			state = csr_matrix(state)
 			return self.clf.predict(state)

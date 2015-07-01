@@ -26,7 +26,7 @@ screen_size = (500,500)
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
 
-MAX_LAPS = 5
+MAX_LAPS = 3
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
@@ -69,7 +69,7 @@ lap = 0
 #pdb.set_trace()
 
 first_frame = True 
-intial_training = True
+intial_training = False
 robot_only = False
 
 
@@ -87,7 +87,7 @@ while running:
     screen.fill((0,0,0))
     past_lap = Track.getLap(red.xc,red.yc)
     red.Update()
-    print red.xc,red.yc
+    #print red.xc,red.yc
     
     if trap.collidepoint(red.xc,red.yc) == 0:
         if inbox == 1 :
@@ -107,7 +107,7 @@ while running:
 
     red.updateStats(Track,dummy_cars)
     state = red.getState(Track,dummy_cars)
-    print "STATE",state
+    #print "STATE",state
 
         
     if(not intial_training):
@@ -119,7 +119,7 @@ while running:
         screen.blit(text,(xt-20,yt))
         key = pygame.key.get_pressed()
         if key[K_d] :
-            print "key d pressed"
+            #print "key d pressed"
             a = np.array([0])
             red.view = (red.view+2)%360
         
@@ -165,7 +165,6 @@ while running:
         robot.updateModel(States,Actions)
 
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
-        IPython.embed()
         if(intial_training):
             #robot.States = robot.listToMat(States)
             robot.States = np.array(States)

@@ -6,7 +6,7 @@ input: "data"
 # input_dim: batch size x feature dimension x height x width
 
 # Batch size for classifications
-input_dim: 1
+input_dim: 10
 # Feature dimension. Example: RGB uses 3.
 input_dim: 3
 # Height/width of input vector/image
@@ -73,7 +73,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 3
+    num_output: 40
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -87,9 +87,10 @@ layer {
 layer {
   name: "relu1"
   type: "ReLU"
-  top: "relu1"
   bottom: "fc1"
+  top: "relu1"
 }
+
 layer {
   name: "fc2"
   type: "InnerProduct"
