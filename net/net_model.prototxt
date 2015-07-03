@@ -6,7 +6,7 @@ input: "data"
 # input_dim: batch size x feature dimension x height x width
 
 # Batch size for classifications
-input_dim: 10
+input_dim: 1
 # Feature dimension. Example: RGB uses 3.
 input_dim: 3
 # Height/width of input vector/image

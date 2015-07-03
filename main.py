@@ -26,7 +26,7 @@ screen_size = (500,500)
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
 
-MAX_LAPS = 3
+MAX_LAPS = 1
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
@@ -70,6 +70,8 @@ lap = 0
 
 first_frame = True 
 intial_training = False
+# Retrain Net without recollecting data. Assumes inital_training is False.
+retrain_net = True
 robot_only = False
 
 
@@ -88,7 +90,7 @@ while running:
     past_lap = Track.getLap(red.xc,red.yc)
     red.Update()
     #print red.xc,red.yc
-    
+
     if trap.collidepoint(red.xc,red.yc) == 0:
         if inbox == 1 :
             red.lap += 1
@@ -98,15 +100,16 @@ while running:
 
     screen.blit(visible_track,(car.xs-red.xc,car.ys-red.yc))
     Track.Draw(screen,(red.xc-car.xs,red.yc-car.ys))
-    
+
     for d_car in dummy_cars:
         d_car.Update(Track,screen)
         d_car.Draw((red.xc-car.xs),(red.yc-car.ys),screen)
 
     red.Draw(car.xs,car.ys,screen)
 
-    red.updateStats(Track,dummy_cars)
-    state = red.getState(Track,dummy_cars)
+    # Add 3d image state
+    state = pygame.surfarray.array3d(screen)
+
     #print "STATE",state
 
         
@@ -128,7 +131,10 @@ while running:
             red.view = (red.view+358)%360
         else:
             a = np.array([2])    
-    else: 
+    else:
+        if retrain_net:
+            robot.trainModel()
+
         a = robot.getAction(state)
 
         text = font.render("Robot Control",1,(0,0,255))
@@ -148,15 +154,14 @@ while running:
 
     if((intial_training or ask_for_help == 1 or first_frame) and not robot_only):
         if(first_frame):
-            img = pygame.surfarray.array3d(screen)
             States = []
-            States.append(img)
+            States.append(state)
             Actions = np.array([a[0]])
             first_frame = False 
         else:
             img = pygame.surfarray.array3d(screen)
 
-            States.append(img)
+            States.append(state)
 
             Actions = np.vstack((Actions,a))  
    
@@ -168,9 +173,8 @@ while running:
         if(intial_training):
             #robot.States = robot.listToMat(States)
             robot.States = np.array(States)
-            robot.Actions = np.array(Actions) 
+            robot.Actions = np.array(Actions)
             robot.trainModel(robot.States,robot.Actions)
-            intial_training = False
 
     if not Track.IsOnTrack(red) :
         red.wobble = 10

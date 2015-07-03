@@ -23,6 +23,7 @@ import shutil
 import tempfile
 
 import random
+import matplotlib.pyplot as plt
 
 # OpenCV
 import cv2
@@ -45,15 +46,19 @@ class Learner():
 	MODEL_FILE = os.path.join(NET_SUBDIR, 'net_model.prototxt')
 	TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_1000.caffemodel')
 
+
+
 	def Load(self,gamma = 1e-3):
-		if not self.neural:
+		if self.neural:
+			caffe.set_mode_cpu()
+			self.net = caffe.Classifier(model_file=self.MODEL_FILE, pretrained_file=self.TRAINED_MODEL,channel_swap=(2,1,0))
+		else:
 			self.States = pickle.load(open('states.p','rb'))
 			self.Actions = pickle.load(open('actions.p','rb'))
 			self.Weights = np.zeros(self.Actions.shape)+1
 			self.gamma = gamma
 			self.trainModel(self.States,self.Actions)
 
-		
 	def clearModel(self):
 		self.States = pickle.load(open('states.p','rb'))
 		self.Actions = pickle.load(open('actions.p','rb')) 
@@ -83,10 +88,12 @@ class Learner():
 		Outputs the given states/actions into
 		image files for neural net training in Caffe.
 		"""
-		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))) for img in States]
 
+		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))) for img in States]
+		channel_swapped = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in downsampled_states]
+		Action = [int(act) for act in Action]
 		train_states, train_actions, test_states, test_actions = \
-			self.split_training_test(downsampled_states, Action)
+			self.split_training_test(channel_swapped, Action)
 		# train/test.txt should be a list of image files / actions to be read
 		with open(os.path.join(self.NET_SUBDIR, 'train.txt'), 'w') as f:
 			for i in range(len(train_states)):
@@ -102,23 +109,25 @@ class Learner():
 
 
 
-	def trainModel(self, States, Action):
+	def trainModel(self, States=None, Action=None):
 		"""
 		Trains model on given states and actions.
 		Uses neural net or SVM based on global
 		settings.
+		If no states/actions are passed in, retrains net
+		based on preprocessed images.
 		"""
-		States, Action = States[1:], Action[1:]
-		print "States.shape"
-		print States.shape
-		print "Action.shape"
-		print Action.shape
-
-		Action = np.ravel(Action)
+		if States != None and Action != None:
+			print "States.shape"
+			print States.shape
+			print "Action.shape"
+			print Action.shape
+			Action = np.ravel(Action)
 
 		if self.neural:
-			# Neural net implementation
-			self.output_images(States, Action)
+			if States != None and Action != None:
+				# Output images if passing in new states/actions
+				self.output_images(States, Action)
 
 			# Change to "caffe.set_mode_gpu() for GPU mode"
 			caffe.set_mode_cpu()
@@ -188,15 +197,24 @@ class Learner():
 		settings.
 		"""
 		if self.neural:
-			net = caffe.Net (self.MODEL_FILE,self.TRAINED_MODEL,caffe.TEST)
-			# Caffe takes in 4D array inputs.
-			data4D = np.zeros([1,3,125,125])
-			# Fill in last 3 dimensions
-			data4D[0] = cv2.pyrDown((cv2.pyrDown(state)))
-			# Forward call creates a dictionary corresponding to the layers
-			pred_dict = net.forward_all(data=data4D)
-			# 'prob' layer contains actions and their respective probabilities
-			prediction = pred_dict['prob'].argmax()
+			downsampled = cv2.pyrDown((cv2.pyrDown(state))).transpose([1,0,2])
+			#test_filename = self.NET_SUBDIR + 'debug_images/' + 'test_img_{0}.png'.format(0)
+			#cv2.imwrite(test_filename, downsampled)
+			input_image = caffe.io.load_image('/home/wesley/Desktop/RL/net/train_images/train_img_9.png')
+			real_input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
+			pred_matrix = self.net.predict([real_input_image], oversample=False)  # predict takes any number of images, and formats them for the Caffe net automatically
+			#pred_matrix = self.net.forward_all(data=preprocessed)
+			prediction = pred_matrix[0].argmax()
+
+			"""
+			caffe_in = np.zeros([1,3,125,125], dtype=np.float32)
+			caffe_in[0] = input_image.transpose([2,1,0])
+			out = self.net.forward_all(data=caffe_in)
+			pred_matrix = out[self.net.outputs[0]]
+			"""
+
+			print "pred_matrix: {0}".format(pred_matrix)
+			print "Prediction: {0}".format(prediction)
 			return [prediction]
 		else:
 			state = csr_matrix(state)
