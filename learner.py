@@ -200,9 +200,9 @@ class Learner():
 			downsampled = cv2.pyrDown((cv2.pyrDown(state))).transpose([1,0,2])
 			#test_filename = self.NET_SUBDIR + 'debug_images/' + 'test_img_{0}.png'.format(0)
 			#cv2.imwrite(test_filename, downsampled)
-			input_image = caffe.io.load_image('/home/wesley/Desktop/RL/net/train_images/train_img_9.png')
-			real_input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
-			pred_matrix = self.net.predict([real_input_image], oversample=False)  # predict takes any number of images, and formats them for the Caffe net automatically
+			#input_image = caffe.io.load_image('/home/wesley/Desktop/RL/net/train_images/train_img_9.png')
+			#real_input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
+			pred_matrix = self.net.predict([downsampled], oversample=False)  # predict takes any number of images, and formats them for the Caffe net automatically
 			#pred_matrix = self.net.forward_all(data=preprocessed)
 			prediction = pred_matrix[0].argmax()
 

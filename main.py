@@ -71,7 +71,7 @@ lap = 0
 first_frame = True 
 intial_training = False
 # Retrain Net without recollecting data. Assumes inital_training is False.
-retrain_net = True
+retrain_net = False
 robot_only = False
 
 
