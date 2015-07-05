@@ -163,7 +163,7 @@ while running:
         robot.updateModel(States,Actions)
 
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
-        IPython.embed()
+        0-
         if(intial_training):
             robot.States = robot.listToMat(States)
             robot.Actions = Actions 
