@@ -67,10 +67,7 @@ class Soteria():
         return self.learner.getNumData()
  
     def reset(self):
-        self.actions = np.array([0])
-        self.states  = np.zeros([1,self.STATE_DIM])
-        self.kmm_state = np.zeros([1,self.STATE_DIM])
-        self.weight = np.zeros(1)
-        self.count = 0
+        self.States = []
+        self.Actions = []
 
     

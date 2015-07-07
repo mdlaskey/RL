@@ -16,6 +16,7 @@ import pickle
 import numpy as np
 import track 
 import time
+import matplotlib as plt
 
 from Agents.DAgger import Dagger 
 from Agents.Soteria import Soteria
@@ -36,6 +37,7 @@ red = car.Sprite()
 blue = dummy_car.Sprite()
 font = pygame.font.Font(None,60)
 
+iterations = 0
 
 car.xs = screen_size[0]/2;
 car.ys = screen_size[1]/2;
@@ -57,6 +59,8 @@ red.Load('red',360,Track.returnStart())
 
 car_list = Track.genCars(5*5)
 
+cars_hit = []
+timeOffTrack = [] 
 dummy_cars = []
 for car_p in car_list:
     d_car = dummy_car.Sprite()
@@ -115,16 +119,21 @@ while running:
    
 
 
-    if(not intial_training and agent.getName() == 'Soteria'):
-        ask_for_help = robot.askForHelp(state)
+    if(not intial_training):
+        ask_for_help = agent.askForHelp(state)
 
     key = pygame.key.get_pressed()
 
 
-    if(key[K_f]):
+    if(len(agent.States)>500 and not intial_training):
         red.reset(dummy_cars)
-        IPython.embed()
+        
+        cars_hit.append(red.carsHit)
+        iterations += 1
+        timeOffTrack.append(red.timeOffTrack)
+        
         agent.updateModel()
+        agent.reset()
 
     if key[K_d] :
         a = np.array([0])
@@ -132,7 +141,8 @@ while running:
         a = np.array([1])
     else:
         a = np.array([2])
-
+    if(iterations == 10):
+        IPython.embed()
 
 
     if((intial_training or ask_for_help == -1) and not robot_only):

@@ -140,6 +140,9 @@ class Sprite():
             d.xf = d.startXf
             d.yf = d.startYf
 
+        self.carsHit = 0
+        self.timeOffTrack = 0
+
 
     def isCrashed(self,track):
         mid_cords = track.mid_cords

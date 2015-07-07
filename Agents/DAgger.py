@@ -20,7 +20,8 @@ class Dagger():
         self.learner = Learner()
      
         
-        
+    def askForHelp(self,img):
+        return 1
     def loadModel(self):
         self.learner.Load()
 
@@ -58,10 +59,7 @@ class Dagger():
         return self.learner.getNumData()
  
     def reset(self):
-        self.actions = np.array([0])
-        self.states  = np.zeros([1,self.STATE_DIM])
-        self.kmm_state = np.zeros([1,self.STATE_DIM])
-        self.weight = np.zeros(1)
-        self.count = 0
+        self.States = []
+        self.Actions = []
 
     
