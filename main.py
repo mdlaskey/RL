@@ -26,7 +26,7 @@ screen_size = (500,500)
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
 
-MAX_LAPS = 1
+MAX_LAPS = 5
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
@@ -134,6 +134,7 @@ while running:
     else:
         if retrain_net:
             robot.trainModel()
+            retrain_net = False
 
         a = robot.getAction(state)
 

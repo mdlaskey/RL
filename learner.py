@@ -51,7 +51,7 @@ class Learner():
 	def Load(self,gamma = 1e-3):
 		if self.neural:
 			caffe.set_mode_cpu()
-			self.net = caffe.Classifier(model_file=self.MODEL_FILE, pretrained_file=self.TRAINED_MODEL,channel_swap=(2,1,0))
+			self.net = caffe.Classifier(model_file=self.MODEL_FILE, pretrained_file=self.TRAINED_MODEL)
 		else:
 			self.States = pickle.load(open('states.p','rb'))
 			self.Actions = pickle.load(open('actions.p','rb'))
@@ -89,7 +89,7 @@ class Learner():
 		image files for neural net training in Caffe.
 		"""
 
-		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))) for img in States]
+		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))).transpose([1,0,2]) for img in States]
 		channel_swapped = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in downsampled_states]
 		Action = [int(act) for act in Action]
 		train_states, train_actions, test_states, test_actions = \
@@ -197,20 +197,20 @@ class Learner():
 		settings.
 		"""
 		if self.neural:
-			downsampled = cv2.pyrDown((cv2.pyrDown(state))).transpose([1,0,2])
-			#test_filename = self.NET_SUBDIR + 'debug_images/' + 'test_img_{0}.png'.format(0)
-			#cv2.imwrite(test_filename, downsampled)
-			#input_image = caffe.io.load_image('/home/wesley/Desktop/RL/net/train_images/train_img_9.png')
-			#real_input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
-			pred_matrix = self.net.predict([downsampled], oversample=False)  # predict takes any number of images, and formats them for the Caffe net automatically
-			#pred_matrix = self.net.forward_all(data=preprocessed)
+			downsampled = cv2.pyrDown((cv2.pyrDown(state)).transpose([1,0,2]))
+
+			pred_matrix = self.net.predict([downsampled])  # predict takes any number of images, and formats them for the Caffe net automatically
 			prediction = pred_matrix[0].argmax()
 
 			"""
+			input_image = plt.imread('/home/wesley/Desktop/RL/net/train_images/train_img_0.png')
+			input_pred = self.net.predict([input_image])
+			"""
+			"""
 			caffe_in = np.zeros([1,3,125,125], dtype=np.float32)
-			caffe_in[0] = input_image.transpose([2,1,0])
+			caffe_in[0] = input_image.transpose([2,0,1])
 			out = self.net.forward_all(data=caffe_in)
-			pred_matrix = out[self.net.outputs[0]]
+			pred_matrix2 = out[self.net.outputs[0]]
 			"""
 
 			print "pred_matrix: {0}".format(pred_matrix)
