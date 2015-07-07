@@ -21,7 +21,7 @@ import IPython
 class AHQP():
 
 	B = 1000
-	nu_g = 0.9
+	nu_g = 0.92
 	nu_b = 0.1
 
 	def assembleKernel(self,data,labels):

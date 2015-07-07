@@ -11,7 +11,8 @@ layer {
   }
   image_data_param {
     # Location of train.txt file
-    source: "/home/wesley/Desktop/RL/net/train.txt"
+    # source: "/home/wesley/Desktop/RL/net/train.txt"
+    source: "/Users/michaelluskey/Documents/RL/LFD/lapmaster1.1/net/train.txt"
     batch_size: 10
   }
 }
@@ -25,7 +26,8 @@ layer {
   }
   image_data_param {
     # Location of test.txt file
-    source: "/home/wesley/Desktop/RL/net/test.txt"
+    # source: "/home/wesley/Desktop/RL/net/test.txt"
+    source: "/Users/michaelluskey/Documents/RL/LFD/lapmaster1.1/net/test.txt"
     batch_size: 10
   }
 }

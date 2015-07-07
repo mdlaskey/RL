@@ -32,10 +32,9 @@ data = pickle.load(open('states.p','rb'))
 data = data[:,1:3]
 DIM = data.shape[0]
 labels = np.zeros((DIM,1))+1.0
-# labels[DIM*0.9:DIM,0] = -1
-
+IPython.embed()
 for i in range(data.shape[0]):
-	if(data[i,0]<200.0):
+	if((data[i,0]<200.0 and data[i,1] > 800) or (data[i,0]>800.0 and data[i,1] < 400.0)):
 		labels[i] = -1.0
 
 ahqp= AHQP()
@@ -50,7 +49,6 @@ weights = ahqp.solveQP(DIM)
 xx1, yy1 = np.meshgrid(np.linspace(1400,0, 50), np.linspace(1400, 0, 50))
 # xx1, yy1 = np.meshgrid(np.linspace(-4,4), np.linspace(-4, 4))
 
-IPython.embed()
 plt.figure(1)
 
 
@@ -65,17 +63,17 @@ Z1 = Z1.reshape(xx1.shape)
 
 plt.figure(1)  # two clusters
 
-plt.contour(
-    xx1, yy1, Z1, levels=[0], linewidths=5, colors='r')
+# plt.contour(
+#     xx1, yy1, Z1, levels=[0], linewidths=5, colors='r')
 
 
 
 # Plot the results (= shape of the data points cloud)
 for i in range(DIM):
 	if(labels[i] == -1):
-		plt.scatter(data[i, 0], data[i, 1], color='black',s=10)
+		plt.scatter(data[i, 0], data[i, 1], color='green',s=10)
 	else:
-		plt.scatter(data[i,0],data[i,1],color = 'green',s=10)
+		plt.scatter(data[i,0],data[i,1],color = 'black',s=10)
 
 
 plt.xlim((xx1.min(), xx1.max()))

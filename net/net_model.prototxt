@@ -6,7 +6,7 @@ input: "data"
 # input_dim: batch size x feature dimension x height x width
 
 # Batch size for classifications
-input_dim: 10
+input_dim: 1
 # Feature dimension. Example: RGB uses 3.
 input_dim: 3
 # Height/width of input vector/image
@@ -26,10 +26,7 @@ layer {
     num_output: 16     # learn 16 filters
     kernel_size: 11    # each filter is 11x11
     stride: 2          # step 2 pixels between each filter application
-    weight_filler {
-      type: "gaussian" # initialize the filters from a Gaussian
-      std: 0.01        # distribution with stdev 0.01 (default mean: 0)
-    }
+
     bias_filler {
       type: "constant" # initialize the biases to zero (0)
       value: 0
@@ -49,10 +46,7 @@ layer {
     num_output: 16     # learn 16 filters
     kernel_size: 11    # each filter is 11x11
     stride: 2          # step 2 pixels between each filter application
-    weight_filler {
-      type: "gaussian" # initialize the filters from a Gaussian
-      std: 0.01        # distribution with stdev 0.01 (default mean: 0)
-    }
+
     bias_filler {
       type: "constant" # initialize the biases to zero (0)
       value: 0
@@ -74,10 +68,7 @@ layer {
   }
   inner_product_param {
     num_output: 40
-    weight_filler {
-      type: "gaussian"
-      std: 0.01
-    }
+
     bias_filler {
       type: "constant"
       value: 0
@@ -106,10 +97,7 @@ layer {
   }
   inner_product_param {
     num_output: 3
-    weight_filler {
-      type: "gaussian"
-      std: 0.01
-    }
+
     bias_filler {
       type: "constant"
       value: 0

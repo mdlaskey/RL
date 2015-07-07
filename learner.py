@@ -14,7 +14,7 @@ from scipy.sparse import vstack
 import sys
 
 # Make sure that caffe is on the python path:
-sys.path.append('/home/wesley/caffe/python')
+#sys.path.append('/home/wesley/caffe/python')
 
 import caffe
 import os
@@ -84,7 +84,7 @@ class Learner():
 		image files for neural net training in Caffe.
 		"""
 		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))) for img in States]
-
+	
 		train_states, train_actions, test_states, test_actions = \
 			self.split_training_test(downsampled_states, Action)
 		# train/test.txt should be a list of image files / actions to be read
@@ -92,13 +92,13 @@ class Learner():
 			for i in range(len(train_states)):
 				train_filename = self.NET_SUBDIR + 'train_images/' + 'train_img_{0}.png'.format(i)
 				cv2.imwrite(train_filename, train_states[i])
-				f.write(train_filename + " " + str(train_actions[i]) + '\n')
+				f.write(train_filename + " " + str(int(train_actions[i])) + '\n')
 
 		with open(os.path.join(self.NET_SUBDIR, 'test.txt'), 'w') as f:
 			for i in range(len(test_states)):
 				test_filename = self.NET_SUBDIR + 'test_images/' + 'test_img_{0}.png'.format(i)
 				cv2.imwrite(test_filename, test_states[i])
-				f.write(test_filename + " " + str(test_actions[i]) + '\n')
+				f.write(test_filename + " " + str(int(test_actions[i])) + '\n')
 
 
 
@@ -118,12 +118,14 @@ class Learner():
 
 		if self.neural:
 			# Neural net implementation
+		
 			self.output_images(States, Action)
 
 			# Change to "caffe.set_mode_gpu() for GPU mode"
 			caffe.set_mode_cpu()
 			solver = caffe.get_solver(self.SOLVER_FILE)
 			solver.solve()
+			IPython.embed()
 		else:
 			# Original SVC implementation
 			self.clf = svm.LinearSVC()
@@ -189,14 +191,25 @@ class Learner():
 		"""
 		if self.neural:
 			net = caffe.Net (self.MODEL_FILE,self.TRAINED_MODEL,caffe.TEST)
+			
 			# Caffe takes in 4D array inputs.
 			data4D = np.zeros([1,3,125,125])
+
 			# Fill in last 3 dimensions
-			data4D[0] = cv2.pyrDown((cv2.pyrDown(state)))
+			
+			img = cv2.pyrDown((cv2.pyrDown(state)))
+
+			data4D[0,0,:,:] = img[:,:,0]
+			data4D[0,1,:,:] = img[:,:,1]
+			data4D[0,2,:,:] = img[:,:,2]
+			#cv2.imshow('img',img)
 			# Forward call creates a dictionary corresponding to the layers
+
 			pred_dict = net.forward_all(data=data4D)
 			# 'prob' layer contains actions and their respective probabilities
 			prediction = pred_dict['prob'].argmax()
+			print pred_dict
+
 			return [prediction]
 		else:
 			state = csr_matrix(state)
