@@ -40,11 +40,14 @@ class Sprite():
         self.NF = NF
 #       self.xc = 1690
 #        self.yc = 2400
+
         self.xc = xs
         self.yc = ys
         self.id = xs 
         self.xf = float(self.xc)
         self.yf = float(self.yc)
+        self.startXf = self.xf
+        self.startYf = self.yf
         self.x_s = 0
         self.y_s =0
         self.speed = 5

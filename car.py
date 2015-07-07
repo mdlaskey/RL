@@ -131,11 +131,14 @@ class Sprite():
     def sort_func(self,d):
         return d[0]
 
-    def reset(self):
+    def reset(self,dummycars):
         self.xf = self.start[0]
         self.yf = self.start[1]
 
         self.view = self.start_v
+        for d in dummycars:
+            d.xf = d.startXf
+            d.yf = d.startYf
 
 
     def isCrashed(self,track):

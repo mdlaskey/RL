@@ -16,10 +16,9 @@ import pickle
 import numpy as np
 import track 
 import time
+
 from Agents.DAgger import Dagger 
-
-
-
+from Agents.Soteria import Soteria
 #import movie
 
 screen_size = (500,500)
@@ -27,7 +26,7 @@ screen_size = (500,500)
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
 
-MAX_LAPS = 10
+MAX_LAPS = 3
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
@@ -57,7 +56,7 @@ Track.Load()
 red.Load('red',360,Track.returnStart())
 
 car_list = Track.genCars(5*5)
-time.sleep(10)
+
 dummy_cars = []
 for car_p in car_list:
     d_car = dummy_car.Sprite()
@@ -70,7 +69,7 @@ lap = 0
 #pdb.set_trace()
 
 first_frame = True 
-intial_training = True
+intial_training = False
 robot_only = False
 
 agent = Dagger(intial_training)
@@ -112,45 +111,61 @@ while running:
     state = pygame.surfarray.array3d(screen)
     #print "STATE",state
 
-        
-    if(not intial_training):
+    
+   
+
+
+    if(not intial_training and agent.getName() == 'Soteria'):
         ask_for_help = robot.askForHelp(state)
+
+    key = pygame.key.get_pressed()
+
+
+    if(key[K_f]):
+        red.reset(dummy_cars)
+        IPython.embed()
+        agent.updateModel()
+
+    if key[K_d] :
+        a = np.array([0])
+    elif key[K_a]:
+        a = np.array([1])
+    else:
+        a = np.array([2])
+
+
 
     if((intial_training or ask_for_help == -1) and not robot_only):
 
-        #text = font.render("Human Control",1,(255,0,0))
-        #screen.blit(text,(xt-20,yt))
-        key = pygame.key.get_pressed()
+        text = font.render("Human Control",1,(255,0,0))
+        screen.blit(text,(xt-20,yt))
+        
         if key[K_d] :
             #print "key d pressed"
-            a = np.array([0])
             red.view = (red.view+2)%360
         
         elif key[K_a]:
-            a = np.array([1])
             red.view = (red.view+358)%360
         else:
             a = np.array([2])    
     else: 
-        a = agent.getAction(state)
+        a_r = agent.getAction(state)
 
-        #text = font.render("Robot Control",1,(0,0,255))
-        #screen.blit(text,(xt,yt))
+        text = font.render("Robot Control",1,(0,0,255))
+        screen.blit(text,(xt,yt))
 
-        if a[0] == 0 :
-            a = np.array([0])
+        if a_r[0] == 0 :
             red.view = (red.view+2)%360
         
-        elif a[0] == 1:
-            a = np.array([1])
+        elif a_r[0] == 1:
             red.view = (red.view+358)%360
         else:
             a = np.array([2])
 
     pygame.display.flip()
 
-    if((intial_training or ask_for_help == 1 or first_frame) and not robot_only):
-        agent.integrateObservation(state,a)  
+ 
+    agent.integrateObservation(state,a)  
    
     # if(red.isCrashed(Track)):
     #     red.reset()
@@ -161,7 +176,7 @@ while running:
         if(intial_training):
             agent.newModel()
             intial_training = False 
-            red.reset()
+            red.reset(dummy_cars)
             
 
     if not Track.IsOnTrack(red) :
