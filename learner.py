@@ -18,9 +18,6 @@ sys.path.append('/home/wesley/caffe/python')
 
 import caffe
 import os
-import h5py
-import shutil
-import tempfile
 
 import random
 import matplotlib.pyplot as plt
@@ -49,10 +46,7 @@ class Learner():
 
 
 	def Load(self,gamma = 1e-3):
-		if self.neural:
-			caffe.set_mode_cpu()
-			self.net = caffe.Classifier(model_file=self.MODEL_FILE, pretrained_file=self.TRAINED_MODEL)
-		else:
+		if not self.neural:
 			self.States = pickle.load(open('states.p','rb'))
 			self.Actions = pickle.load(open('actions.p','rb'))
 			self.Weights = np.zeros(self.Actions.shape)+1
@@ -92,20 +86,22 @@ class Learner():
 		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))).transpose([1,0,2]) for img in States]
 		channel_swapped = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in downsampled_states]
 		Action = [int(act) for act in Action]
+
 		train_states, train_actions, test_states, test_actions = \
 			self.split_training_test(channel_swapped, Action)
+
 		# train/test.txt should be a list of image files / actions to be read
 		with open(os.path.join(self.NET_SUBDIR, 'train.txt'), 'w') as f:
 			for i in range(len(train_states)):
 				train_filename = self.NET_SUBDIR + 'train_images/' + 'train_img_{0}.png'.format(i)
 				cv2.imwrite(train_filename, train_states[i])
-				f.write(train_filename + " " + str(train_actions[i]) + '\n')
+				f.write(train_filename + " " + str(int(train_actions[i])) + '\n')
 
 		with open(os.path.join(self.NET_SUBDIR, 'test.txt'), 'w') as f:
 			for i in range(len(test_states)):
 				test_filename = self.NET_SUBDIR + 'test_images/' + 'test_img_{0}.png'.format(i)
 				cv2.imwrite(test_filename, test_states[i])
-				f.write(test_filename + " " + str(test_actions[i]) + '\n')
+				f.write(test_filename + " " + str(int(test_actions[i])) + '\n')
 
 
 
@@ -122,7 +118,7 @@ class Learner():
 			print States.shape
 			print "Action.shape"
 			print Action.shape
-			Action = np.ravel(Action)
+
 
 		if self.neural:
 			if States != None and Action != None:
@@ -140,22 +136,6 @@ class Learner():
 			self.clf.C = 1e-2
 			self.clf.fit(States, Action)
 
-		"""
-		# Original novel implementation
-		self.novel = svm.OneClassSVM()
-
-		self.novel.gamma = self.gamma
-		self.novel.nu = 1e-3
-		self.novel.kernel = 'rbf'
-		self.novel.verbose = False
-		self.novel.shrinking = False
-		self.novel.max_iter = 3000
-
-		self.novel.fit(self.supStates)
-
-		if (self.verbose):
-			self.debugPolicy(States, Action)
-		"""
 	
 
 	def getScoreNovel(self,States):
@@ -198,23 +178,20 @@ class Learner():
 		"""
 		if self.neural:
 			downsampled = cv2.pyrDown((cv2.pyrDown(state)).transpose([1,0,2]))
+			net = caffe.Net (self.MODEL_FILE,self.TRAINED_MODEL,caffe.TEST)
+			
+			# Caffe takes in 4D array inputs.
+			data4D = np.zeros([1,3,125,125])
 
-			pred_matrix = self.net.predict([downsampled])  # predict takes any number of images, and formats them for the Caffe net automatically
-			prediction = pred_matrix[0].argmax()
+			data4D[0,0,:,:] = downsampled[:,:,0]
+			data4D[0,1,:,:] = downsampled[:,:,1]
+			data4D[0,2,:,:] = downsampled[:,:,2]
 
-			"""
-			input_image = plt.imread('/home/wesley/Desktop/RL/net/train_images/train_img_0.png')
-			input_pred = self.net.predict([input_image])
-			"""
-			"""
-			caffe_in = np.zeros([1,3,125,125], dtype=np.float32)
-			caffe_in[0] = input_image.transpose([2,0,1])
-			out = self.net.forward_all(data=caffe_in)
-			pred_matrix2 = out[self.net.outputs[0]]
-			"""
-
-			print "pred_matrix: {0}".format(pred_matrix)
-			print "Prediction: {0}".format(prediction)
+			# Forward call creates a dictionary corresponding to the layers
+			pred_dict = net.forward_all(data=data4D)
+			# 'prob' layer contains actions and their respective probabilities
+			prediction = pred_dict['prob'].argmax()
+			print pred_dict
 			return [prediction]
 		else:
 			state = csr_matrix(state)

@@ -47,6 +47,8 @@ class Sprite():
         self.view = 270
         self.images = []
         self.NF = NF
+        self.start = start 
+        self.start_v = self.view 
         self.xc = start[0]
         self.yc = start[1]
         self.xf = float(self.xc)
@@ -128,6 +130,24 @@ class Sprite():
 
     def sort_func(self,d):
         return d[0]
+
+    def reset(self):
+        self.xf = self.start[0]
+        self.yf = self.start[1]
+
+        self.view = self.start_v
+
+
+    def isCrashed(self,track):
+        mid_cords = track.mid_cords
+        radius = track.radius  
+        dist = LA.norm(mid_cords -self.cords)
+
+        if(dist > radius + 100):
+            return True
+        else:
+            return False 
+
 
     def getState(self,track,dummycars):
         state = np.zeros(2) 

@@ -45,6 +45,11 @@ class Track():
 
        self.track = [r1,r2,r3,r4]
 
+       top_corner = np.array([START,START])
+       bottom_corner = np.array([r2_x+TRACK_WIDTH,r2_y+TRACK_LENGTH])
+
+       self.mid_cords = bottom_corner - top_corner
+       self.radius = LA.norm(bottom_corner-top_corner)/2.0 
 
        random.seed(10)
 

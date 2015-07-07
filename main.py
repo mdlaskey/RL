@@ -16,6 +16,7 @@ import pickle
 import numpy as np
 import track 
 import time
+from Agents.DAgger import Dagger 
 
 
 
@@ -26,7 +27,7 @@ screen_size = (500,500)
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
 
-MAX_LAPS = 5
+MAX_LAPS = 3
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
@@ -47,7 +48,7 @@ xt = 100
 
 yt = 20
 
-
+BLUE = (  0,   0, 255)
 visible_track = pygame.image.load('track_textured.png')
 trap = pygame.Rect(844,1324,140,200)
 trk = track_f.get_at((0,0))
@@ -55,8 +56,8 @@ Track = track.Track()
 Track.Load()
 red.Load('red',360,Track.returnStart())
 
-car_list = Track.genCars(4*5)
-
+car_list = Track.genCars(5*5)
+time.sleep(10)
 dummy_cars = []
 for car_p in car_list:
     d_car = dummy_car.Sprite()
@@ -69,11 +70,13 @@ lap = 0
 #pdb.set_trace()
 
 first_frame = True 
+
 intial_training = False
 # Retrain Net without recollecting data. Assumes inital_training is False.
-retrain_net = False
+retrain_net = True
 robot_only = False
 
+agent = Dagger(intial_training)
 
 frames = 0
 robot = learner.Learner()
@@ -101,6 +104,9 @@ while running:
     screen.blit(visible_track,(car.xs-red.xc,car.ys-red.yc))
     Track.Draw(screen,(red.xc-car.xs,red.yc-car.ys))
 
+    pygame.draw.circle(screen,BLUE,(int(Track.mid_cords[0]),int(Track.mid_cords[1])),int(Track.radius),0)
+
+
     for d_car in dummy_cars:
         d_car.Update(Track,screen)
         d_car.Draw((red.xc-car.xs),(red.yc-car.ys),screen)
@@ -108,6 +114,7 @@ while running:
     red.Draw(car.xs,car.ys,screen)
 
     # Add 3d image state
+    red.updateStats(Track,dummy_cars)
     state = pygame.surfarray.array3d(screen)
 
     #print "STATE",state
@@ -118,8 +125,8 @@ while running:
 
     if((intial_training or ask_for_help == -1) and not robot_only):
 
-        text = font.render("Human Control",1,(255,0,0))
-        screen.blit(text,(xt-20,yt))
+        #text = font.render("Human Control",1,(255,0,0))
+        #screen.blit(text,(xt-20,yt))
         key = pygame.key.get_pressed()
         if key[K_d] :
             #print "key d pressed"
@@ -130,7 +137,7 @@ while running:
             a = np.array([1])
             red.view = (red.view+358)%360
         else:
-            a = np.array([2])    
+            a = np.array([2])
     else:
         if retrain_net:
             robot.trainModel()
@@ -138,8 +145,8 @@ while running:
 
         a = robot.getAction(state)
 
-        text = font.render("Robot Control",1,(0,0,255))
-        screen.blit(text,(xt,yt))
+        #text = font.render("Robot Control",1,(0,0,255))
+        #screen.blit(text,(xt,yt))
 
         if a[0] == 0 :
             a = np.array([0])
@@ -154,28 +161,19 @@ while running:
     pygame.display.flip()
 
     if((intial_training or ask_for_help == 1 or first_frame) and not robot_only):
-        if(first_frame):
-            States = []
-            States.append(state)
-            Actions = np.array([a[0]])
-            first_frame = False 
-        else:
-            img = pygame.surfarray.array3d(screen)
-
-            States.append(state)
-
-            Actions = np.vstack((Actions,a))  
+        agent.integrateObservation(state,a)
    
-    if(Track.getLap(red.xc,red.yc)> past_lap and not intial_training and not robot_only):
-        first_frame = True;
-        robot.updateModel(States,Actions)
+    # if(red.isCrashed(Track)):
+    #     red.reset()
+    #     IPython.embed()
+    #     agent.updateModel()
 
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
         if(intial_training):
-            #robot.States = robot.listToMat(States)
-            robot.States = np.array(States)
-            robot.Actions = np.array(Actions)
-            robot.trainModel(robot.States,robot.Actions)
+            agent.newModel()
+            intial_training = False 
+            red.reset()
+
 
     if not Track.IsOnTrack(red) :
         red.wobble = 10
