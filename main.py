@@ -16,6 +16,7 @@ import pickle
 import numpy as np
 import track 
 import time
+import matplotlib as plt
 
 from Agents.DAgger import Dagger 
 from Agents.Soteria import Soteria
@@ -36,6 +37,7 @@ red = car.Sprite()
 blue = dummy_car.Sprite()
 font = pygame.font.Font(None,60)
 
+iterations = 0
 
 car.xs = screen_size[0]/2;
 car.ys = screen_size[1]/2;
@@ -55,8 +57,11 @@ Track = track.Track()
 Track.Load()
 red.Load('red',360,Track.returnStart())
 
-car_list = Track.genCars(5*5)
+car_list = Track.genCars(0*5)
 
+cars_hit = []
+timeOffTrack = [] 
+timeHit = []
 dummy_cars = []
 for car_p in car_list:
     d_car = dummy_car.Sprite()
@@ -68,8 +73,8 @@ inbox = trap.collidepoint(red.xc,red.yc)
 lap = 0
 #pdb.set_trace()
 
-first_frame = True 
-intial_training = False
+first_frame = True
+intial_training = True
 retrain_net = False
 robot_only = False
 
@@ -79,7 +84,6 @@ frames = 0
 robot = learner.Learner()
 if(not intial_training):
     robot.Load(retrain_net=retrain_net)
-
 
 
 while running:
@@ -100,7 +104,7 @@ while running:
 
     screen.blit(visible_track,(car.xs-red.xc,car.ys-red.yc))
     Track.Draw(screen,(red.xc-car.xs,red.yc-car.ys))
-    pygame.draw.circle(screen,BLUE,(int(Track.mid_cords[0]),int(Track.mid_cords[1])),int(Track.radius),0)
+
 
     for d_car in dummy_cars:
         d_car.Update(Track,screen)
@@ -117,15 +121,25 @@ while running:
 
 
     if(not intial_training):
-        ask_for_help = 0#robot.askForHelp(state)
+        ask_for_help = agent.askForHelp(state)
 
     key = pygame.key.get_pressed()
 
-
     if(key[K_f]):
+        time.sleep(20)
+
+    if(red.isCrashed(Track)):
+        red.timesHit += 1
+        red.returnToTrack(Track)
+
+    if(len(agent.States)>700 and not intial_training):
+        cars_hit.append(red.carsHit)
+        iterations += 1
+        timeOffTrack.append(red.timeOffTrack)
+        timeHit.append(red.timesHit)
         red.reset(dummy_cars)
-        IPython.embed()
         agent.updateModel()
+        agent.reset()
 
     if key[K_d] :
         a = np.array([0])
@@ -133,13 +147,14 @@ while running:
         a = np.array([1])
     else:
         a = np.array([2])
-
+    if(iterations == 10):
+        IPython.embed()
 
 
     if((intial_training or ask_for_help == -1) and not robot_only):
 
         text = font.render("Human Control",1,(255,0,0))
-        screen.blit(text,(xt-20,yt))
+        #screen.blit(text,(xt-20,yt))
         
         if key[K_d] :
             #print "key d pressed"
@@ -147,21 +162,19 @@ while running:
         
         elif key[K_a]:
             red.view = (red.view+358)%360
-        else:
-            a = np.array([2])    
+         
     else: 
         a_r = agent.getAction(state)
 
         text = font.render("Robot Control",1,(0,0,255))
-        screen.blit(text,(xt,yt))
+        #screen.blit(text,(xt,yt))
 
         if a_r[0] == 0 :
             red.view = (red.view+2)%360
         
         elif a_r[0] == 1:
             red.view = (red.view+358)%360
-        else:
-            a = np.array([2])
+  
 
     pygame.display.flip()
 
@@ -176,6 +189,7 @@ while running:
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
         if(intial_training):
             agent.newModel()
+            agent.reset()
             intial_training = False 
             red.reset(dummy_cars)
             

@@ -32,7 +32,7 @@ data = pickle.load(open('states.p','rb'))
 data = data[:,1:3]
 DIM = data.shape[0]
 labels = np.zeros((DIM,1))+1.0
-IPython.embed()
+#IPython.embed()
 for i in range(data.shape[0]):
 	if((data[i,0]<200.0 and data[i,1] > 800) or (data[i,0]>800.0 and data[i,1] < 400.0)):
 		labels[i] = -1.0
@@ -63,8 +63,8 @@ Z1 = Z1.reshape(xx1.shape)
 
 plt.figure(1)  # two clusters
 
-# plt.contour(
-#     xx1, yy1, Z1, levels=[0], linewidths=5, colors='r')
+plt.contour(
+    xx1, yy1, Z1, levels=[0], linewidths=5, colors='r')
 
 
 
@@ -90,4 +90,4 @@ plt.xlabel("X Position")
 plt.show()
 
 
-IPython.embed()
+#IPython.embed()

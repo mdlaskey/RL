@@ -38,7 +38,7 @@ class AHQP():
 		self.K = np.dot(W.T,np.dot(self.G,W)) 
 		self.K = self.K
 
-	def assembleKernelSparse(self,data,data_p):
+	def assembleKernelSparse(self,data,labels):
 		self.m = data.shape[0]
 
 		gamma = 1.0/float(self.m)		

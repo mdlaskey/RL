@@ -18,10 +18,10 @@ class Dagger():
         self.States = []
         self.Actions = []
         self.learner = Learner()
-     
+
     def getName(self):
         return 'Dagger'
-        
+
     def loadModel(self):
         self.learner.Load()
 
@@ -44,7 +44,6 @@ class Dagger():
 
 
     def updateModel(self):
-     
         States = np.array(self.States)
         Actions = np.array(self.Actions)
         self.learner.trainModel(States,Actions,fineTune = True)
@@ -62,10 +61,7 @@ class Dagger():
         return self.learner.getNumData()
  
     def reset(self):
-        self.actions = np.array([0])
-        self.states  = np.zeros([1,self.STATE_DIM])
-        self.kmm_state = np.zeros([1,self.STATE_DIM])
-        self.weight = np.zeros(1)
-        self.count = 0
+        self.States = []
+        self.Actions = []
 
     

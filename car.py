@@ -62,6 +62,7 @@ class Sprite():
         self.pre_cords = self.cords
         self.carsHit = 0
         self.timeOffTrack = 0
+        self.timesHit = 0 
         for f in range(NF):
             nv = len(str(f+1))
             name = path+'/fr_'
@@ -140,13 +141,25 @@ class Sprite():
             d.xf = d.startXf
             d.yf = d.startYf
 
+        self.carsHit = 0
+        self.timesHit = 0
+        self.timeOffTrack = 0
+
+    def returnToTrack(self,track):
+        view,pos = track.closestRectangle(self.cords)
+
+        self.xf = pos[0]
+        self.yf = pos[1]
+
+        self.view = int(57.296*view+90)
 
     def isCrashed(self,track):
         mid_cords = track.mid_cords
-        radius = track.radius  
+        outer_radius = track.radius
+        inner_radius = track.radius / 2
         dist = LA.norm(mid_cords -self.cords)
 
-        if(dist > radius + 100):
+        if(dist > outer_radius or dist < inner_radius):
             return True
         else:
             return False 
