@@ -136,6 +136,7 @@ layer {
   }
 }
 
+
 # Loss and accuracy layers used for training/testing
 layer {
   name: "loss"

@@ -57,10 +57,11 @@ Track = track.Track()
 Track.Load()
 red.Load('red',360,Track.returnStart())
 
-car_list = Track.genCars(5*5)
+car_list = Track.genCars(0*5)
 
 cars_hit = []
 timeOffTrack = [] 
+timeHit = []
 dummy_cars = []
 for car_p in car_list:
     d_car = dummy_car.Sprite()
@@ -73,16 +74,12 @@ lap = 0
 #pdb.set_trace()
 
 first_frame = True 
-intial_training = False
+intial_training = True
 robot_only = False
 
 agent = Dagger(intial_training)
 
 frames = 0
-robot = learner.Learner()
-if(not intial_training):
-    robot.Load()
-
 
 
 while running:
@@ -103,7 +100,7 @@ while running:
 
     screen.blit(visible_track,(car.xs-red.xc,car.ys-red.yc))
     Track.Draw(screen,(red.xc-car.xs,red.yc-car.ys))
-    pygame.draw.circle(screen,BLUE,(int(Track.mid_cords[0]),int(Track.mid_cords[1])),int(Track.radius),0)
+
 
     for d_car in dummy_cars:
         d_car.Update(Track,screen)
@@ -124,14 +121,19 @@ while running:
 
     key = pygame.key.get_pressed()
 
+    if(key[K_f]):
+        time.sleep(20)
 
-    if(len(agent.States)>500 and not intial_training):
-        red.reset(dummy_cars)
-        
+    if(red.isCrashed(Track)):
+        red.timesHit += 1
+        red.returnToTrack(Track)
+
+    if(len(agent.States)>700 and not intial_training):
         cars_hit.append(red.carsHit)
         iterations += 1
         timeOffTrack.append(red.timeOffTrack)
-        
+        timeHit.append(red.timesHit)
+        red.reset(dummy_cars)
         agent.updateModel()
         agent.reset()
 
@@ -148,7 +150,7 @@ while running:
     if((intial_training or ask_for_help == -1) and not robot_only):
 
         text = font.render("Human Control",1,(255,0,0))
-        screen.blit(text,(xt-20,yt))
+        #screen.blit(text,(xt-20,yt))
         
         if key[K_d] :
             #print "key d pressed"
@@ -156,21 +158,19 @@ while running:
         
         elif key[K_a]:
             red.view = (red.view+358)%360
-        else:
-            a = np.array([2])    
+         
     else: 
         a_r = agent.getAction(state)
 
         text = font.render("Robot Control",1,(0,0,255))
-        screen.blit(text,(xt,yt))
+        #screen.blit(text,(xt,yt))
 
         if a_r[0] == 0 :
             red.view = (red.view+2)%360
         
         elif a_r[0] == 1:
             red.view = (red.view+358)%360
-        else:
-            a = np.array([2])
+  
 
     pygame.display.flip()
 
@@ -185,6 +185,7 @@ while running:
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
         if(intial_training):
             agent.newModel()
+            agent.reset()
             intial_training = False 
             red.reset(dummy_cars)
             

@@ -75,12 +75,14 @@ layer {
     }
   }
 }
+
 layer {
   name: "relu1"
   type: "ReLU"
   bottom: "fc1"
   top: "relu1"
 }
+
 
 layer {
   name: "fc2"
@@ -104,6 +106,9 @@ layer {
     }
   }
 }
+
+
+
 
 # Probability layer that pycaffe returns
 layer {

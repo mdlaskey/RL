@@ -118,7 +118,8 @@ class Learner():
 		print States.shape
 		print "Action.shape"
 		print Action.shape
-
+		print 121
+		
 		Action = np.ravel(Action)
 
 		if self.neural:
@@ -141,6 +142,8 @@ class Learner():
 			self.clf.class_weight = 'auto'
 			self.clf.C = 1e-2
 			self.clf.fit(States, Action)
+
+		IPython.embed()
 
 		"""
 		# Original novel implementation
@@ -204,14 +207,14 @@ class Learner():
 
 			# Fill in last 3 dimensions
 
-			data4D[0,0,:,:] = self.sup_states[0,:,:,0]
-			data4D[0,1,:,:] = self.sup_states[0,:,:,1]
-			data4D[0,2,:,:] = self.sup_states[0,:,:,2]
+			data4D[0,0,:,:] = self.sup_states[i,:,:,0]
+			data4D[0,1,:,:] = self.sup_states[i,:,:,1]
+			data4D[0,2,:,:] = self.sup_states[i,:,:,2]
 
 			net.blobs['data'].data[...] = data4D
 			net.forward(start='conv1',end='fc1')
 			sup_states_t[i,:] = net.blobs['fc1'].data
-		IPython.embed()
+		
 		self.sup_states = sup_states_t
 		
 	def trainSupport(self):
@@ -222,7 +225,8 @@ class Learner():
 		self.scaler = preprocessing.StandardScaler().fit(self.sup_states)
 		self.sup_states = self.scaler.transform(self.sup_states)
 		self.novel = svm.OneClassSVM()
-
+		
+		
 		self.novel.gamma = 1e-3
 		self.novel.nu = 1e-3
 		self.novel.kernel = 'rbf'

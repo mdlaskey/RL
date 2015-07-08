@@ -45,11 +45,9 @@ class Track():
 
        self.track = [r1,r2,r3,r4]
 
-       top_corner = np.array([START,START])
-       bottom_corner = np.array([r2_x+TRACK_WIDTH,r2_y+TRACK_LENGTH])
-
-       self.mid_cords = bottom_corner - top_corner
-       self.radius = LA.norm(bottom_corner-top_corner)/2.0 
+       center = TRACK_LENGTH+TRACK_WIDTH+300
+       self.mid_cords = np.array([float(center)/2.0,float(center)/2.0])
+       self.radius = float(center)/2.0
 
        random.seed(10)
 
@@ -162,6 +160,25 @@ class Track():
 
       return self.lap 
 
+
+    def closestRectangle(self,pos):
+      dist = 1e6
+      for i in range(4):
+        tr = self.track[i]
+        cent = np.array([tr.centerx,tr.centery])
+        if(dist > LA.norm(pos-cent)):
+          dist = LA.norm(pos-cent)
+          idx = i
+          closest = tr
+
+      if(idx == 1 or idx == 3):
+        pos[0] = closest.centerx
+      else:
+        pos[1] = closest.centery
+
+      return ANGLES[idx],pos
+
+
     def currentRectangle(self,x,y):
       angle = None 
       rec = 0
@@ -214,8 +231,13 @@ class Track():
         dim = [width,height]
         rect = [tl[0] - car_pos[0],tl[1]-car_pos[1],width,height]
         #rect = [tl[0],tl[1],width,height]
+      
         print tl,width,height
         pygame.draw.rect(screen,BLACK,rect)
+ 
+      mid_x = int(self.mid_cords[0] - car_pos[0])
+      mid_y = int(self.mid_cords[1] - car_pos[1])
+      #pygame.draw.circle(screen,BLUE,(mid_x,mid_y),int(self.radius),10)
 
       tr = self.finish
       tl = tr.topleft
