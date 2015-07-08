@@ -11,8 +11,8 @@ layer {
   }
   image_data_param {
     # Location of train.txt file
-    # source: "/home/wesley/Desktop/RL/net/train.txt"
-    source: "/Users/michaelluskey/Documents/RL/LFD/lapmaster1.1/net/train.txt"
+    source: "/home/wesley/Desktop/RL/net/train.txt"
+    # source: "/Users/michaelluskey/Documents/RL/LFD/lapmaster1.1/net/train.txt"
     batch_size: 10
   }
 }
@@ -26,8 +26,8 @@ layer {
   }
   image_data_param {
     # Location of test.txt file
-    # source: "/home/wesley/Desktop/RL/net/test.txt"
-    source: "/Users/michaelluskey/Documents/RL/LFD/lapmaster1.1/net/test.txt"
+    source: "/home/wesley/Desktop/RL/net/test.txt"
+    # source: "/Users/michaelluskey/Documents/RL/LFD/lapmaster1.1/net/test.txt"
     batch_size: 10
   }
 }
@@ -54,34 +54,12 @@ layer {
     }
   }
 }
-layer {
-  name: "conv2"
-  type: "Convolution"
-  bottom: "conv1"
-  top: "conv2"
-  # learning rate and decay multipliers for the filters
-  param { lr_mult: 1 decay_mult: 1 }
-  # learning rate and decay multipliers for the biases
-  param { lr_mult: 2 decay_mult: 0 }
-  convolution_param {
-    num_output: 16     # learn 16 filters
-    kernel_size: 11    # each filter is 11x11
-    stride: 2          # step 2 pixels between each filter application
-    weight_filler {
-      type: "gaussian" # initialize the filters from a Gaussian
-      std: 0.01        # distribution with stdev 0.01 (default mean: 0)
-    }
-    bias_filler {
-      type: "constant" # initialize the biases to zero (0)
-      value: 0
-    }
-  }
-}
+
 
 layer {
   name: "fc1"
   type: "InnerProduct"
-  bottom: "conv2"
+  bottom: "conv1"
   top: "fc1"
   param {
     lr_mult: 1

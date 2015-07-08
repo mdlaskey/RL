@@ -14,13 +14,10 @@ from scipy.sparse import vstack
 import sys
 
 # Make sure that caffe is on the python path:
-#sys.path.append('/home/wesley/caffe/python')
+sys.path.append('/home/wesley/caffe/python')
 
 import caffe
 import os
-import h5py
-import shutil
-import tempfile
 
 import random
 
@@ -46,10 +43,14 @@ class Learner():
 	MODEL_FILE = os.path.join(NET_SUBDIR, 'net_model.prototxt')
 	TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_1000.caffemodel')
 
-	def Load(self,gamma = 1e-3):
+	def Load(self,gamma = 1e-3, retrain_net=False):
 		self.sup_states = pickle.load(open('states.p','rb'))
 		self.trainSupport()
-		if not self.neural:
+		if self.neural:
+			if retrain_net:
+				self.trainModel(retrain_net=retrain_net)
+
+		else:
 			self.Actions = pickle.load(open('actions.p','rb'))
 			self.Weights = np.zeros(self.Actions.shape)+1
 			self.gamma = gamma
@@ -107,24 +108,25 @@ class Learner():
 
 
 
-	def trainModel(self, States, Action,fineTune = False):
+	def trainModel(self, States=None, Action=None, fineTune = False, retrain_net=False):
 		"""
 		Trains model on given states and actions.
 		Uses neural net or SVM based on global
 		settings.
 		"""
-		States, Action = States[1:], Action[1:]
-		print "States.shape"
-		print States.shape
-		print "Action.shape"
-		print Action.shape
+		if not retrain_net:
+			States, Action = States[1:], Action[1:]
+			print "States.shape"
+			print States.shape
+			print "Action.shape"
+			print Action.shape
 
-		Action = np.ravel(Action)
+			Action = np.ravel(Action)
 
 		if self.neural:
-			# Neural net implementation
-		
-			self.output_images(States, Action)
+			if not retrain_net:
+				# Neural net implementation
+				self.output_images(States, Action)
 			# Change to "caffe.set_mode_gpu() for GPU mode"
 			caffe.set_mode_cpu()
 

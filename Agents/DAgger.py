@@ -19,10 +19,14 @@ class Dagger():
         self.Actions = []
         self.learner = Learner()
      
-        
+    def getName(self):
+        return 'Dagger'
         
     def loadModel(self):
         self.learner.Load()
+
+    def askForHelp(self,img):
+        return 1
 
     def getAction(self,img):
         """ Possible analysis of current observation and sending an action back

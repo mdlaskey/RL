@@ -1,6 +1,6 @@
 # Location of train/test prototxt file
-#net: "/home/wesley/Desktop/RL/net/net_train_test.prototxt"
-net: "/Users/michaelluskey/Documents/RL/LFD/lapmaster1.1/net/net_train_test.prototxt"
+net: "/home/wesley/Desktop/RL/net/net_train_test.prototxt"
+# net: "/Users/michaelluskey/Documents/RL/LFD/lapmaster1.1/net/net_train_test.prototxt"
 
 test_iter: 25
 test_interval: 100

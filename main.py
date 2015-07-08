@@ -70,6 +70,7 @@ lap = 0
 
 first_frame = True 
 intial_training = False
+retrain_net = False
 robot_only = False
 
 agent = Dagger(intial_training)
@@ -77,7 +78,7 @@ agent = Dagger(intial_training)
 frames = 0
 robot = learner.Learner()
 if(not intial_training):
-    robot.Load()
+    robot.Load(retrain_net=retrain_net)
 
 
 
@@ -115,8 +116,8 @@ while running:
    
 
 
-    if(not intial_training and agent.getName() == 'Soteria'):
-        ask_for_help = robot.askForHelp(state)
+    if(not intial_training):
+        ask_for_help = 0#robot.askForHelp(state)
 
     key = pygame.key.get_pressed()
 

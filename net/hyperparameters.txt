@@ -1,0 +1,39 @@
+Baseline:
+
+I0707 16:16:14.620550 14458 solver.cpp:276] Iteration 1000, loss = 0.51105
+I0707 16:16:14.620590 14458 solver.cpp:294] Iteration 1000, Testing net (#0)
+I0707 16:16:18.646406 14458 solver.cpp:343]     Test net output #0: accuracy = 0.872
+I0707 16:16:18.646455 14458 solver.cpp:343]     Test net output #1: loss = 0.369203 (* 1 = 0.369203 loss)
+
+Delete last IP layer:
+
+I0707 17:48:28.559005 18154 solver.cpp:276] Iteration 1000, loss = 0.0773258
+I0707 17:48:28.559041 18154 solver.cpp:294] Iteration 1000, Testing net (#0)
+I0707 17:48:31.993051 18154 solver.cpp:343]     Test net output #0: accuracy = 0.868
+I0707 17:48:31.993094 18154 solver.cpp:343]     Test net output #1: loss = 0.310343 (* 1 = 0.310343 loss)
+
+Delete conv2:
+
+I0707 22:02:41.614526 29357 solver.cpp:276] Iteration 1000, loss = 0.106042
+I0707 22:02:41.614565 29357 solver.cpp:294] Iteration 1000, Testing net (#0)
+I0707 22:02:43.786828 29357 solver.cpp:343]     Test net output #0: accuracy = 0.928
+I0707 22:02:43.786870 29357 solver.cpp:343]     Test net output #1: loss = 0.232403 (* 1 = 0.232403 loss)
+
+Delete conv2 + Delete last IP layer: 
+
+I0707 22:22:51.992885  1119 solver.cpp:276] Iteration 1000, loss = 1.09861
+I0707 22:22:51.992925  1119 solver.cpp:294] Iteration 1000, Testing net (#0)
+I0707 22:22:53.833127  1119 solver.cpp:343]     Test net output #0: accuracy = 0.616
+I0707 22:22:53.833173  1119 solver.cpp:343]     Test net output #1: loss = 1.09861 (* 1 = 1.09861 loss)
+
+Replace ReLU with Sigmoid:
+I0707 20:44:12.289872 25772 solver.cpp:276] Iteration 1000, loss = 0.93063
+I0707 20:44:12.289911 25772 solver.cpp:294] Iteration 1000, Testing net (#0)
+I0707 20:44:15.743269 25772 solver.cpp:343]     Test net output #0: accuracy = 0.616
+I0707 20:44:15.743316 25772 solver.cpp:343]     Test net output #1: loss = 0.930372 (* 1 = 0.930372 loss)
+
+Sigmoid at end:
+I0707 21:49:26.929303 27822 solver.cpp:276] Iteration 1000, loss = 0.861099
+I0707 21:49:26.929342 27822 solver.cpp:294] Iteration 1000, Testing net (#0)
+I0707 21:49:30.378016 27822 solver.cpp:343]     Test net output #0: accuracy = 0.616
+I0707 21:49:30.378063 27822 solver.cpp:343]     Test net output #1: loss = 0.852795 (* 1 = 0.852795 loss)

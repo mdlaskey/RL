@@ -34,29 +34,9 @@ layer {
   }
 }
 layer {
-  name: "conv2"
-  type: "Convolution"
-  bottom: "conv1"
-  top: "conv2"
-  # learning rate and decay multipliers for the filters
-  param { lr_mult: 1 decay_mult: 1 }
-  # learning rate and decay multipliers for the biases
-  param { lr_mult: 2 decay_mult: 0 }
-  convolution_param {
-    num_output: 16     # learn 16 filters
-    kernel_size: 11    # each filter is 11x11
-    stride: 2          # step 2 pixels between each filter application
-
-    bias_filler {
-      type: "constant" # initialize the biases to zero (0)
-      value: 0
-    }
-  }
-}
-layer {
   name: "fc1"
   type: "InnerProduct"
-  bottom: "conv2"
+  bottom: "conv1"
   top: "fc1"
   param {
     lr_mult: 1
