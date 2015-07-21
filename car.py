@@ -65,20 +65,15 @@ class Sprite():
         self.timesHit = 0 
         for f in range(NF):
             nv = len(str(f+1))
-            name = path+'/fr_'
-            if nv == 1:
-                name += '000'
-            if nv == 2:
-                name += '00'
-            if nv == 3:
-                name += '0'
-            self.images += [pygame.image.load(name+str(f+1)+'.png')]
+            name = path+'/human_ '
+            self.images += [pygame.image.load(name+str(f)+'.png')]
+
     def Draw(self,x,y,screen):
         view = self.view + int(random.gauss(0,self.wobble))
 
         if view < 0 :
             view = view + 360
-        view = view%360
+        view = (view+270)%360
 
         self.car_pos = [x,y]
         self.screen = screen
@@ -202,7 +197,7 @@ class Sprite():
         for d_car in dummycars:
             d = np.zeros(2)
             dist = LA.norm(d_car.cords -self.cords)
-            if(dist < 15 and d_car.id != self.pastId):
+            if(dist < 30 and d_car.id != self.pastId):
                 self.carsHit += 1
                 self.pastId = d_car.id 
         
@@ -217,7 +212,7 @@ class Sprite():
 
         theta = self.view/57.296
         if self.wobble :
-            idle_sound.set_volume(1.)
+            idle_sound.set_volume(0.)
         else :
             idle_sound.set_volume(0)
 

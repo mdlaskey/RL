@@ -22,12 +22,12 @@ from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 #import movie
 
-screen_size = (500,500)
+screen_size = (400,400)
 
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
 
-MAX_LAPS = 3
+MAX_LAPS = 2
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
@@ -55,9 +55,9 @@ trap = pygame.Rect(844,1324,140,200)
 trk = track_f.get_at((0,0))
 Track = track.Track()
 Track.Load()
-red.Load('red',360,Track.returnStart())
+red.Load('car_images',360,Track.returnStart())
 
-car_list = Track.genCars(0*5)
+car_list = Track.genCars(6*5)
 
 cars_hit = []
 timeOffTrack = [] 
@@ -65,7 +65,7 @@ timeHit = []
 dummy_cars = []
 for car_p in car_list:
     d_car = dummy_car.Sprite()
-    d_car.Load('purple',360,car_p[0],car_p[1])
+    d_car.Load('car_images',360,car_p[0],car_p[1])
     dummy_cars.append(d_car)
 
 
@@ -81,6 +81,7 @@ robot_only = False
 agent = Dagger(intial_training)
 
 frames = 0
+iters = 0
 robot = learner.Learner()
 if(not intial_training):
     robot.Load(retrain_net=retrain_net)
@@ -88,6 +89,7 @@ if(not intial_training):
 
 while running:
     clock.tick(24)
+    iters += 1
     frames = frames + 1
     car.frames = frames
     screen.fill((0,0,0))
@@ -132,14 +134,15 @@ while running:
         red.timesHit += 1
         red.returnToTrack(Track)
 
-    if(len(agent.States)>700 and not intial_training):
+    if(iters>700 and not intial_training):
         cars_hit.append(red.carsHit)
         iterations += 1
         timeOffTrack.append(red.timeOffTrack)
         timeHit.append(red.timesHit)
         red.reset(dummy_cars)
         agent.updateModel()
-        agent.reset()
+        #agent.reset()
+        iters = 0
 
     if key[K_d] :
         a = np.array([0])
@@ -147,7 +150,7 @@ while running:
         a = np.array([1])
     else:
         a = np.array([2])
-    if(iterations == 10):
+    if(iterations == 5):
         IPython.embed()
 
 
@@ -189,8 +192,10 @@ while running:
     if Track.getLap(red.xc,red.yc) > MAX_LAPS :
         if(intial_training):
             agent.newModel()
-            agent.reset()
+            #agent.reset()
             intial_training = False 
+            agent.intial_training = False
+            iters = 0
             red.reset(dummy_cars)
             
 

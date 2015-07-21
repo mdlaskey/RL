@@ -34,7 +34,7 @@ class Learner():
 	iter_  = 1
 
 	# Neural net implementation
-	neural = True
+	neural = False
 
 	# Assumes current directory is "RL/"
 	NET_SUBDIR = os.getcwd() + '/net/'
@@ -134,15 +134,16 @@ class Learner():
 			if(fineTune):
 				solver = caffe.get_solver(self.SOLVER_FILE_FT)
 				solver.net.copy_from(self.TRAINED_MODEL)
-				self.TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_200.caffemodel')
+				self.TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_500.caffemodel')
 			solver.solve()
 			
 		else:
 			# Original SVC implementation
 			self.clf = svm.LinearSVC()
-			self.clf.class_weight = 'auto'
+			#self.clf.class_weight = 'auto' 
 			self.clf.C = 1e-2
-			self.clf.fit(States, Action)
+			
+			self.clf.fit(States[:,:,0], Action)
 
 		IPython.embed()
 
@@ -270,8 +271,25 @@ class Learner():
 
 			return [prediction]
 		else:
-			state = csr_matrix(state)
-			return self.clf.predict(state)
+			
+			img = cv2.pyrDown((cv2.pyrDown(state)))
+			winSize = (32,32)
+			blockSize = (16,16)
+			blockStride = (8,8)
+			cellSize = (8,8)
+			nbins = 9
+			derivAperture = 1
+			winSigma = 4.
+			histogramNormType = 0
+			L2HysThreshold = 2.0000000000000001e-01
+			gammaCorrection = 0
+			nlevels = 64
+			hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
+			                histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
+
+			state = hog.compute(img)
+		
+			return self.clf.predict(state.T)
 
 	def askForHelp(self,img):
 
