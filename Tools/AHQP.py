@@ -16,7 +16,7 @@ from sklearn.metrics.pairwise import linear_kernel
 from cvxopt import matrix, solvers
 
 import IPython
-
+import time
 
 class AHQP():
 
@@ -29,25 +29,58 @@ class AHQP():
 		self.data = data
 		self.gamma = 1e-2
 		self.labels = labels
-		self.G = squareform(pdist(data))
+		self.G = squareform(pdist(data, 'euclidean'))
 
 		self.G = np.exp((self.G**2)*-self.gamma)
 		labels = np.ravel(labels)
 		W = np.diag(labels)
 		
-		self.K = np.dot(W.T,np.dot(self.G,W)) 
-		self.K = self.K
+		self.K = np.dot(W.T,np.dot(self.G,W))
+		return self.K
 
-	def assembleKernelSparse(self,data,labels):
+	def assembleKernelSparse1(self,data,labels):
+		def test_time(x):
+			print "Original"
+			start = time.time()
+			np.exp(((x ** 2) *- self.gamma).data)
+			end = time.time()
+			print end - start
+			print "New"
+			start = time.time()
+			np.exp((x.data ** 2) *- self.gamma)
+			end = time.time()
+			print end - start
+
+		data = csr_matrix(data)
+
 		self.m = data.shape[0]
+		self.data = data
+		self.gamma = 1e-2
+		self.labels = labels
+		self.G = csr_matrix(euclidean_distances(data))
+		#test_time(self.G)
+		self.G.data = np.exp((self.G.data ** 2)*-self.gamma)
+		labels = np.ravel(labels)
+		W = np.diag(labels)
 
-		gamma = 1.0/float(self.m)		
+		self.K = W.T.dot(self.G.dot(W))
+		return self.K
 
-		self.K = euclidean_distances(data,data)
-		
-		self.K = np.exp((self.K**2)*-gamma)
+	def assembleKernelSparse2(self,data,labels):
+		data = csr_matrix(data)
 
-		
+		self.m = data.shape[0]
+		self.data = data
+		self.gamma = 1e-2
+		self.labels = labels
+		self.G = csr_matrix(euclidean_distances(data))
+
+		self.G.data = np.exp(((self.G**2)*-self.gamma).data)
+		labels = np.ravel(labels)
+		W = np.diag(labels)
+
+		self.K = W.T.dot(self.G.dot(W))
+		return self.K
 
 	def solveQP(self,dim):
 		P = matrix(self.K)

@@ -17,6 +17,29 @@ import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
 import matplotlib.font_manager
 
+import time
+
+
+def test_sparse_implementations(ahqp, data, labels):
+	print "Original"
+	start = time.time()
+	a = ahqp.assembleKernel(data,labels)
+	end = time.time()
+	print end - start
+
+	print "Implementation 1"
+	start = time.time()
+	b = ahqp.assembleKernelSparse1(data,labels)
+	end = time.time()
+	print end - start
+
+	print "Implementation 2"
+	start = time.time()
+	c = ahqp.assembleKernelSparse2(data,labels)
+	end = time.time()
+	print end - start
+
+	print a, b, c
 
 DIM = 2
 
@@ -39,7 +62,9 @@ for i in range(data.shape[0]):
 
 ahqp= AHQP()
 
-ahqp.assembleKernel(data,labels)
+#ahqp.assembleKernel(data,labels)
+
+test_sparse_implementations(ahqp, data, labels)
 
 
 weights = ahqp.solveQP(DIM)
