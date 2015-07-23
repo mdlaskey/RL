@@ -27,14 +27,14 @@ import cv2
 class Learner():
 
 	verbose = True
-	option_1 = False 
+	option_1 = False
 	gamma = 1e-3
 	gamma_clf = 1e-3
-	first_time = True 
+	first_time = True
 	iter_  = 1
 
 	# Neural net implementation
-	neural = True
+	neural = False
 
 	# Assumes current directory is "RL/"
 	NET_SUBDIR = os.getcwd() + '/net/'
@@ -56,10 +56,10 @@ class Learner():
 			self.gamma = gamma
 			self.trainModel(self.States,self.Actions)
 
-		
+
 	def clearModel(self):
 		self.States = pickle.load(open('states.p','rb'))
-		self.Actions = pickle.load(open('actions.p','rb')) 
+		self.Actions = pickle.load(open('actions.p','rb'))
 		self.Weights = np.zeros(self.Actions.shape)+1
 
 	def split_training_test(self, States, Action):
@@ -87,7 +87,7 @@ class Learner():
 		image files for neural net training in Caffe.
 		"""
 		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))) for img in States]
-	
+
 		train_states, train_actions, test_states, test_actions = \
 			self.split_training_test(downsampled_states, Action)
 
@@ -134,17 +134,16 @@ class Learner():
 			if(fineTune):
 				solver = caffe.get_solver(self.SOLVER_FILE_FT)
 				solver.net.copy_from(self.TRAINED_MODEL)
-				self.TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_200.caffemodel')
+				self.TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_500.caffemodel')
 			solver.solve()
-			
+
 		else:
 			# Original SVC implementation
 			self.clf = svm.LinearSVC()
-			self.clf.class_weight = 'auto'
+			#self.clf.class_weight = 'auto' 
 			self.clf.C = 1e-2
-			self.clf.fit(States, Action)
 
-		IPython.embed()
+			self.clf.fit(States[:,:,0], Action)
 
 		"""
 		# Original novel implementation
@@ -157,19 +156,17 @@ class Learner():
 		self.novel.shrinking = False
 		self.novel.max_iter = 3000
 
-		self.novel.fit(self.supStates)
+		self.novel.fit(States)
 
 		if (self.verbose):
 			self.debugPolicy(States, Action)
 		"""
-	
-
 	def getScoreNovel(self,States):
 		num_samples = States.shape[0]
 		avg = 0
 		for i in range(num_samples):
 			ans = self.novel.predict(States[i,:])
-			if(ans == -1): 
+			if(ans == -1):
 				ans = 0
 			avg = avg+ans/num_samples
 
@@ -187,7 +184,7 @@ class Learner():
 			if(Action[i] != prediction[i]):
 				classes[Action[i]][1] += 1
 
-			classes[Action[i]][2] = classes[Action[i]][1]/classes[Action[i]][0] 
+			classes[Action[i]][2] = classes[Action[i]][1]/classes[Action[i]][0]
 		for d in classes:
 			print d, classes[d]
 
@@ -198,8 +195,8 @@ class Learner():
 
 	def processState(self):
 		net = caffe.Net (self.MODEL_FILE,self.TRAINED_MODEL,caffe.TEST)
-		
-		
+
+
 		sup_states_t = np.zeros((len(self.sup_states),40))
 
 		for i in range(len(self.sup_states)):
@@ -215,26 +212,26 @@ class Learner():
 			net.blobs['data'].data[...] = data4D
 			net.forward(start='conv1',end='fc1')
 			sup_states_t[i,:] = net.blobs['fc1'].data
-		
+
 		self.sup_states = sup_states_t
-		
+
 	def trainSupport(self):
 
 		if(self.sup_states.shape[1] != 40):
 			self.processState()
-		
+
 		self.scaler = preprocessing.StandardScaler().fit(self.sup_states)
 		self.sup_states = self.scaler.transform(self.sup_states)
 		self.novel = svm.OneClassSVM()
-		
-		
+
+
 		self.novel.gamma = 1e-3
 		self.novel.nu = 1e-3
 		self.novel.kernel = 'rbf'
-		self.novel.verbose = True 
-	
+		self.novel.verbose = True
+
 		self.novel.max_iter = 3000
-		
+
 		self.novel.fit(self.sup_states)
 
 
@@ -254,7 +251,7 @@ class Learner():
 			data4D = np.zeros([1,3,125,125])
 
 			# Fill in last 3 dimensions
-			
+
 			img = cv2.pyrDown((cv2.pyrDown(state)))
 
 			data4D[0,0,:,:] = img[:,:,0]
@@ -270,8 +267,25 @@ class Learner():
 
 			return [prediction]
 		else:
-			state = csr_matrix(state)
-			return self.clf.predict(state)
+
+			img = cv2.pyrDown((cv2.pyrDown(state)))
+			winSize = (32,32)
+			blockSize = (16,16)
+			blockStride = (8,8)
+			cellSize = (8,8)
+			nbins = 9
+			derivAperture = 1
+			winSigma = 4.
+			histogramNormType = 0
+			L2HysThreshold = 2.0000000000000001e-01
+			gammaCorrection = 0
+			nlevels = 64
+			hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
+			                histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
+
+			state = hog.compute(img)
+
+			return self.clf.predict(state.T)
 
 	def askForHelp(self,img):
 
@@ -279,7 +293,7 @@ class Learner():
 		data4D = np.zeros([1,3,125,125])
 
 		# Fill in last 3 dimensions
-		
+
 		img = cv2.pyrDown((cv2.pyrDown(img)))
 
 		data4D[0,0,:,:] = img[:,:,0]
@@ -289,18 +303,18 @@ class Learner():
 		net.blobs['data'].data[...] = data4D
 		net.forward(start='conv1',end='fc1')
 		state = net.blobs['fc1'].data
-		
+
 		state = self.scaler.transform(state)
 		return self.novel.predict(state)
 
-	def getNumData(self): 
+	def getNumData(self):
 		return self.Actions.shape[0]
 
 	def newModel(self,states,actions):
 		states = csr_matrix(states)
 
 		self.States = states
-		self.supStates = states.todense() 
+		self.supStates = states.todense()
 		self.Actions = actions
 		self.Weights = np.zeros(actions.shape)+1
 		self.trainModel(self.States,self.Actions)
@@ -308,10 +322,8 @@ class Learner():
 	def updateModel(self,new_states,new_actions,weights):
 		print "UPDATING MODEL"
 
-		#self.States = new_states
-		#self.Actions = new_actions
 		new_states = csr_matrix(new_states)
-		
+
 		self.States = vstack((self.States,new_states))
 		self.supStates = np.vstack((self.supStates,new_states.todense()))
 		self.Actions = np.vstack((self.Actions,new_actions))
@@ -329,5 +341,5 @@ class Learner():
 
 	def saveModel(self):
 		pickle.dump(self.sup_states,open('states.p','wb'))
-		
+
 

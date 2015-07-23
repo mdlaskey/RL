@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager
 
 import time
-
+from sklearn import preprocessing  
 
 def test_sparse_implementations(ahqp, data, labels):
 	print "Original"
@@ -67,6 +67,7 @@ ahqp= AHQP()
 test_sparse_implementations(ahqp, data, labels)
 
 
+
 weights = ahqp.solveQP(DIM)
 
 
@@ -80,7 +81,8 @@ plt.figure(1)
 test = np.c_[xx1.ravel(), yy1.ravel()]
 Z1 = np.zeros((test.shape[0],1))
 for i in range(test.shape[0]):
-	Z1[i] = ahqp.predict(test[i,:])
+	point = scaler.transform(test[i,:])
+	Z1[i] = ahqp.predict(point)
 
 # clf.fit(X1)
 # Z1 = clf.decision_function(np.c_[xx1.ravel(), yy1.ravel()])
@@ -95,7 +97,7 @@ plt.contour(
 
 # Plot the results (= shape of the data points cloud)
 for i in range(DIM):
-	if(labels[i] == -1):
+	if(ahqp.predict(data_fit[i,:]) == -1):
 		plt.scatter(data[i, 0], data[i, 1], color='green',s=10)
 	else:
 		plt.scatter(data[i,0],data[i,1],color = 'black',s=10)

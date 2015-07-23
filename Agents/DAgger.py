@@ -4,6 +4,7 @@ __author__ = "Sergey Karakovskiy, sergey at idsia fullstop ch"
 __date__ = "$May 1, 2009 2:46:34 AM$"
 
 from learner import Learner 
+import cv2
 from scipy.sparse import csr_matrix
 from scipy.sparse import vstack
 
@@ -33,13 +34,29 @@ class Dagger():
         """
       
         action = self.learner.getAction(img)
-
+        self.actionTaken = action
         return action
 
     def integrateObservation(self, img,action):
         """This method stores the observation inside the agent"""
-        self.States.append(img)
-        self.Actions.append(action)  
+        if (self.initialTraining or (self.actionTaken[0] != action[0] and self.action[0] != 2)):
+            img = cv2.pyrDown((cv2.pyrDown(img)))
+            winSize = (32,32)
+            blockSize = (16,16)
+            blockStride = (8,8)
+            cellSize = (8,8)
+            nbins = 9
+            derivAperture = 1
+            winSigma = 4.
+            histogramNormType = 0
+            L2HysThreshold = 2.0000000000000001e-01
+            gammaCorrection = 0
+            nlevels = 64
+            hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
+                            histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
+            state = hog.compute(img)
+            self.States.append(state)
+            self.Actions.append(action)  
             #self.printLevelScene()
 
 
@@ -47,7 +64,7 @@ class Dagger():
         States = np.array(self.States)
         Actions = np.array(self.Actions)
         self.learner.trainModel(States,Actions,fineTune = True)
-       
+        
 
     def getDataAdded(self):
         return self.dataAdded

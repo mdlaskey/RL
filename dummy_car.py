@@ -26,11 +26,13 @@ WIDTH = 14
 HEIGHT = 6 
 
 
-ANGLES = [1,90,180,270]
+ANGLES = [0,89,179,269]
+
+ANGLES_IDX = [89,179,269,0]
                              
 class Sprite():
 
-    def return_dir(self,track,screen):
+    def return_dir(self,track,screen=None):
          
         return track.currentRectangle(self.xc,self.yc)
 
@@ -55,15 +57,9 @@ class Sprite():
         self.wobble = 0
         self.lap = 0
         self.cords = np.array([self.xf,self.yf])
-        for a in ANGLES:
+        for a in ANGLES_IDX:
             nv = len(str(a))
-            name = path+'/fr_'
-            if nv == 1:
-                name += '000'
-            if nv == 2:
-                name += '00'
-            if nv == 3:
-                name += '0'
+            name = path+'/computer_ '
             self.images += [pygame.image.load(name+str(a)+'.png')]
 
     def Draw(self,s_c,s_y,screen):
@@ -82,7 +78,7 @@ class Sprite():
       
         indicated = int(10.0*self.speed)
       
-    def Update(self,track,screen):
+    def Update(self,track,screen=None):
         
         theta = self.return_dir(track,screen)
 

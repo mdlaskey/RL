@@ -9,12 +9,12 @@ lr_policy: "step"
 gamma: 0.1
 stepsize: 500
 display: 100
-max_iter: 200
+max_iter: 500
 momentum: 0.9
 weight_decay: 0.0005
 
 # Number of iterations before snapshot of model is created
-snapshot: 1000
+snapshot: 500
 
 # Switch to GPU for GPU mode
 solver_mode: CPU

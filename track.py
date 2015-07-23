@@ -10,7 +10,7 @@ xt = xs - 100
 yt = ys + 100
 dt = 1.0
 BLACK = (0,0,0)
-BLUE = (  0,   0, 255)
+BLUE = (  0,   0, 0)
 TRACK_WIDTH = 200
 
 TRACK_LENGTH = 1250
@@ -47,8 +47,9 @@ class Track():
 
        center = TRACK_LENGTH+TRACK_WIDTH+300
        self.mid_cords = np.array([float(center)/2.0,float(center)/2.0])
-       self.radius = float(center)/2.0
 
+       self.radius = float(center)/2.0
+      
        random.seed(10)
 
        self.finish = pygame.Rect(TRACK_LENGTH/2,START,200,TRACK_WIDTH)
@@ -203,8 +204,8 @@ class Track():
         if( self.center_rec(x,y,tr,rec) >= 90 or self.center_rec(x,y,self.track[0],0) >= dist_cent):
           angle = ANGLES[0]
 
-      if(angle == None):
-        IPython.embed()
+      #if(angle == None):
+        #IPython.embed()
       #print rec,angle
       return angle
 
@@ -214,6 +215,8 @@ class Track():
         if(tr.collidepoint(car.xc,car.yc)):
           T = True
 
+      if T == False:
+        print "off track"
       return T
 
     def Draw(self,screen,car_pos):
@@ -232,13 +235,12 @@ class Track():
         rect = [tl[0] - car_pos[0],tl[1]-car_pos[1],width,height]
         #rect = [tl[0],tl[1],width,height]
       
-        print tl,width,height
         pygame.draw.rect(screen,BLACK,rect)
  
       mid_x = int(self.mid_cords[0] - car_pos[0])
       mid_y = int(self.mid_cords[1] - car_pos[1])
-      pygame.draw.circle(screen,BLUE,(mid_x,mid_y),int(self.radius),10)
-      pygame.draw.circle(screen,BLUE,(mid_x,mid_y),int(self.radius / 2),10)
+      #pygame.draw.circle(screen,BLUE,(mid_x,mid_y),int(self.radius),10)
+      #pygame.draw.circle(screen,BLUE,(mid_x,mid_y),int(self.radius / 2),10)
       tr = self.finish
       tl = tr.topleft
       tl_t = [tl[0] - car_pos[0],tl[1]-car_pos[1]]
