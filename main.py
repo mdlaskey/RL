@@ -27,7 +27,7 @@ screen_size = (400,400)
 #screen_size = (600,600)
 screen = pygame.display.set_mode(screen_size)
 
-MAX_LAPS = 2
+MAX_LAPS = 10
 
 car.MAX_LAPS = MAX_LAPS
 screen.fill((0,192,0))
