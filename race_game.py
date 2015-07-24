@@ -23,8 +23,10 @@ from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 
 class RaceGame:
-    def __init__(self, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None):
+    def __init__(self, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15):
         self.graphics = graphics
+        self.turn_angle = turn_angle
+
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
@@ -43,7 +45,8 @@ class RaceGame:
 
         self.clock = pygame.time.Clock()
         self.running = True
-        self.red = car.Sprite()
+        if self.graphics:
+            self.red = car.Sprite()
         self.blue = dummy_car.Sprite()
         self.font = pygame.font.Font(None,60)
 
@@ -63,18 +66,24 @@ class RaceGame:
 
         self.Track = track.Track()
         self.Track.Load()
-        self.red.Load('car_images',360,self.Track.returnStart())
-
-        self.car_list = self.Track.genCars(6*5)
 
         self.cars_hit = []
         self.timeOffTrack = []
         self.timeHit = []
         self.dummy_cars = []
-        for car_p in self.car_list:
-            self.d_car = dummy_car.Sprite()
-            self.d_car.Load('car_images',360,car_p[0],car_p[1])
-            self.dummy_cars.append(self.d_car)
+
+        if input_red:
+            self.red = input_red
+        if input_dummy_cars:
+            self.dummy_cars = input_dummy_cars
+
+        if self.graphics:
+            self.red.Load('car_images',360,self.Track.returnStart())
+            self.car_list = self.Track.genCars(6*5)
+            for car_p in self.car_list:
+                self.d_car = dummy_car.Sprite()
+                self.d_car.Load('car_images',360,car_p[0],car_p[1])
+                self.dummy_cars.append(self.d_car)
 
         self.inbox = self.trap.collidepoint(self.red.xc,self.red.yc)
         self.lap = 0
@@ -84,18 +93,14 @@ class RaceGame:
         self.retrain_net = False
         self.robot_only = False
 
-        self.agent = Dagger(self.intial_training)
+        if self.graphics:
+            self.agent = Dagger(self.intial_training)
 
         self.frames = 0
         self.iters = 0
         self.robot = learner.Learner()
         if not self.intial_training:
             self.robot.Load(retrain_net=self.retrain_net)
-
-        if input_red:
-            self.red = input_red
-        if input_dummy_cars:
-            self.dummy_cars = input_dummy_cars
 
     def run_frame(self):
         # Update screen
@@ -142,7 +147,7 @@ class RaceGame:
         if key_input or driving_agent:
             if driving_agent:
                 key_input = self.driving_agent()
-                # print "driving_agent", key_input
+                print "driving_agent", key_input
             key = {K_f:False, K_d:False, K_a:False}
             if key_input == 0:
                 key[K_d] = True
@@ -184,20 +189,20 @@ class RaceGame:
         if (self.intial_training or ask_for_help == -1) and not self.robot_only:
             self.text = self.font.render("Human Control",1,(255,0,0))
             if key[K_d] :
-                self.red.view = (self.red.view+2)%360
+                self.red.view = self.calculate_new_angle(self.red.view, 'right')
             elif key[K_a]:
-                self.red.view = (self.red.view+358)%360
+                self.red.view = self.calculate_new_angle(self.red.view, 'left')
         else:
             a_r = self.agent.getAction(self.state)
             self.text = self.font.render("Robot Control",1,(0,0,255))
             if a_r[0] == 0 :
-                self.red.view = (self.red.view+2)%360
+                self.red.view = self.calculate_new_angle(self.red.view, 'right')
             elif a_r[0] == 1:
-                self.red.view = (self.red.view+358)%360
+                self.red.view = self.calculate_new_angle(self.red.view, 'left')
 
         if self.graphics:
             pygame.display.flip()
-            self.agent.integrateObservation(self.state,a)
+            #self.agent.integrateObservation(self.state,a)
 
         if self.Track.getLap(self.red.xc,self.red.yc) > self.MAX_LAPS:
             if self.intial_training:
@@ -229,21 +234,71 @@ class RaceGame:
                     if self.red.gear < 0:
                         self.red.gear = 0
 
-    def driving_agent(self, num_steps=20):
+    def calculate_new_angle(self, original_angle, action):
+        """
+        Given an angle and action, calculates
+        the new angle after taking that action.
+        """
+        if action == 'left':
+            return (original_angle - self.turn_angle) % 360
+        elif action == 'right':
+            return (original_angle + self.turn_angle) % 360
+        else:
+            return original_angle
+
+    def driving_agent(self, num_steps=5):
         """
         Determines whether to steer left or right
         based on a simulation where it goes straight.
         Returns an action.
+        Prioritizes actions that straighten the car.
+
+        Avoid crashes.
+        If no crashes, pick option that straightens car,
+        provided it doesn't lead to a crash in +5 timesteps, otherwise
+        go straight.
         """
-        if self.simulate_steps(num_steps, 2) == 0:
+        # simulations = [self.simulate_steps(num_steps, i) for i in range(3)]
+        # if simulations[2] == 0:
+        #     return 2
+        # elif simulations[0] == 0:
+        #     return 0
+        # elif simulations[1] == 0:
+        #     return 1
+        # else:
+        #     return min(range(3), key=lambda x: simulations[x])
+
+        # Determines order of actions to try based on deviation from 90 degree multiples
+        possible_actions = ['right', 'left', 'neutral']
+        new_angles = [self.calculate_new_angle(self.red.view, possible_actions[i]) for i in range(3)]
+        deviations = [min(new_angles[i] % 90, abs((new_angles[i] % 90) - 90)) for i in range(3)]
+        actions_sorted = sorted(range(3), key=lambda i: deviations[i])
+
+        # simulations = [self.simulate_steps(num_steps, actions_sorted[i]) for i in range(3)]
+        # desired_index = min(range(3), key=lambda i: simulations[i])
+        # return actions_sorted[desired_index]
+
+        if num_steps == 0:
             return 2
+        # Simulates actions based on order. Order is used to break ties.
+        simulated_first = self.simulate_steps(num_steps, actions_sorted[0])
+        if simulated_first == 0:
+            return actions_sorted[0]
         else:
-            simulated_0 = self.simulate_steps(num_steps, 0)
-            if simulated_0 == 0:
-                return 0
+            simulated_second = self.simulate_steps(num_steps, actions_sorted[1])
+            if simulated_second == 0:
+                return actions_sorted[1]
             else:
-                simulated_1 = self.simulate_steps(num_steps, 1)
-                return 0 if simulated_0 <= simulated_1 else 1
+                simulated_third = self.simulate_steps(num_steps, actions_sorted[2])
+                if simulated_third == 0:
+                    return actions_sorted[2]
+                simulations = [simulated_first, simulated_second, simulated_third]
+                if sum(simulations) != 3:
+                    desired_action = max([2,0,1], key=lambda i: simulations[actions_sorted.index(i)])
+                    return desired_action
+                else:
+                    return self.driving_agent(num_steps=num_steps-1)
+                #return actions_sorted[desired_index]
 
 
 
@@ -259,4 +314,4 @@ class RaceGame:
         for _ in range(num_steps):
             simulated_game.run_frame()
             simulated_game.control_car(key_input=2)
-        return simulated_game.red.timesHit + simulated_game.red.carsHit
+        return simulated_game.red.timesHit + simulated_game.red.carsHit >= 1

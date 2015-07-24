@@ -54,7 +54,7 @@ class Sprite():
         self.xf = float(self.xc)
         self.yf = float(self.yc)
         self.speed = 0
-        self.gear = 3
+        self.gear = 5 # Acceleration
         self.wobble = 0
         self.lap = 0
         self.pastId = 0

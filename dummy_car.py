@@ -52,7 +52,7 @@ class Sprite():
         self.startYf = self.yf
         self.x_s = 0
         self.y_s =0
-        self.speed = 5
+        self.speed = 10
         self.gear = 1
         self.wobble = 0
         self.lap = 0
