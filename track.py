@@ -4,6 +4,7 @@ import random
 import IPython
 import numpy as np
 from numpy import linalg as LA
+import random
 xs = 600
 ys = 450
 xt = xs - 100
@@ -181,7 +182,7 @@ class Track():
 
 
     def currentRectangle(self,x,y):
-      angle = 0
+      angle = random.choice(ANGLES)
       rec = 0
       first = False
       dist_cent = 0
@@ -215,8 +216,6 @@ class Track():
         if(tr.collidepoint(car.xc,car.yc)):
           T = True
 
-      if T == False:
-        print "off track"
       return T
 
     def Draw(self,screen,car_pos):

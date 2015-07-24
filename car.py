@@ -185,9 +185,12 @@ class Sprite():
     def updateStats(self,track,dummycars):
         for d_car in dummycars:
             d = np.zeros(2)
-            dist = LA.norm(d_car.cords -self.cords)
-            if(dist < 25 and d_car.id != self.pastId):
+            #dist = LA.norm(d_car.cords -self.cords)
+            car_bounds = pygame.Rect(d_car.cords[0],d_car.cords[1], 50, 25)
+            #if(dist < 45 and d_car.id != self.pastId):
+            if (car_bounds.collidepoint(self.cords[0],self.cords[1]) and d_car.id != self.pastId):
                 self.carsHit += 1
+                print "HIT"
                 self.pastId = d_car.id 
         
         if(not track.IsOnTrack(self)):
