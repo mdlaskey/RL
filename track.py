@@ -181,7 +181,7 @@ class Track():
 
 
     def currentRectangle(self,x,y):
-      angle = None 
+      angle = 0
       rec = 0
       first = False
       dist_cent = 0
@@ -253,5 +253,5 @@ class Track():
       dim = [width,height]
       rect = [tl[0] - car_pos[0],tl[1]-car_pos[1],width,height]
       #rect = [tl[0],tl[1],width,height]
-      print tl,width,height
+      #print tl,width,height
       pygame.draw.rect(screen,BLUE,rect)

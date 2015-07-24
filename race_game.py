@@ -9,8 +9,6 @@ import pdb
 import learner
 import copy
 
-
-
 pygame.init()
 import car
 import pickle
@@ -18,6 +16,7 @@ import numpy as np
 import track
 import time
 import matplotlib as plt
+import itertools
 
 from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
@@ -135,7 +134,27 @@ class RaceGame:
             else:
                 d_car.Update(self.Track)
 
-    def control_car(self, key_input=None, driving_agent=False):
+    def control_car(self, input_sequence=None, driving_agent=False):
+        """
+        Controls car using given input sequence.
+        Calculates input sequence if none is given and driving_agent is true.
+        """
+        if input_sequence:
+            for action in input_sequence:
+                self.run_frame()
+                self.control_car_step(action)
+        elif driving_agent:
+            input_sequence = self.driving_agent()
+            #print "input_sequence", [i for i in input_sequence]
+            #print "used_sequence", input_sequence[0:2]
+            for action in input_sequence[0:1]:
+                self.run_frame()
+                self.control_car_step(action)
+        else:
+            self.run_frame()
+            self.control_car_step()
+
+    def control_car_step(self, key_input=None):
         """
         Takes a control input and updates the environment.
         0 = "d", 1 = "a", 2 = others/none
@@ -144,10 +163,7 @@ class RaceGame:
             ask_for_help = self.agent.askForHelp(self.state)
 
         # Control
-        if key_input or driving_agent:
-            if driving_agent:
-                key_input = self.driving_agent()
-                print "driving_agent", key_input
+        if key_input != None:
             key = {K_f:False, K_d:False, K_a:False}
             if key_input == 0:
                 key[K_d] = True
@@ -233,7 +249,7 @@ class RaceGame:
                     self.red.gear = self.red.gear - 1
                     if self.red.gear < 0:
                         self.red.gear = 0
-
+        #print "coordinates", self.red.xc, self.red.yc
     def calculate_new_angle(self, original_angle, action):
         """
         Given an angle and action, calculates
@@ -246,72 +262,39 @@ class RaceGame:
         else:
             return original_angle
 
-    def driving_agent(self, num_steps=5):
+    def driving_agent(self, num_steps=5, num_basic_steps=10):
         """
         Determines whether to steer left or right
-        based on a simulation where it goes straight.
-        Returns an action.
+        based on local trajectory simulation.
+        Returns a trajectory that avoids crashing.
         Prioritizes actions that straighten the car.
 
-        Avoid crashes.
-        If no crashes, pick option that straightens car,
-        provided it doesn't lead to a crash in +5 timesteps, otherwise
-        go straight.
+        Heuristic: Going straight > one turn, then go straight >
+        local search trajectory
+
+        Returns first trajectory if no crash-free solution is found.
         """
-        # simulations = [self.simulate_steps(num_steps, i) for i in range(3)]
-        # if simulations[2] == 0:
-        #     return 2
-        # elif simulations[0] == 0:
-        #     return 0
-        # elif simulations[1] == 0:
-        #     return 1
-        # else:
-        #     return min(range(3), key=lambda x: simulations[x])
 
         # Determines order of actions to try based on deviation from 90 degree multiples
         possible_actions = ['right', 'left', 'neutral']
         new_angles = [self.calculate_new_angle(self.red.view, possible_actions[i]) for i in range(3)]
         deviations = [min(new_angles[i] % 90, abs((new_angles[i] % 90) - 90)) for i in range(3)]
-        actions_sorted = sorted(range(3), key=lambda i: deviations[i])
+        actions_sorted = sorted(range(3), key=lambda x: deviations[x])
 
-        # simulations = [self.simulate_steps(num_steps, actions_sorted[i]) for i in range(3)]
-        # desired_index = min(range(3), key=lambda i: simulations[i])
-        # return actions_sorted[desired_index]
+        basic_trajectories = [[i] + ([2] * (num_basic_steps - 1)) for i in actions_sorted]
+        trajectories = basic_trajectories + [i[::-1] for i in itertools.product([0,2,1], repeat=num_steps)]
+        for input_sequence in trajectories:
+            if self.simulate_steps(input_sequence) == 0:
+                return input_sequence
+        print "No solution found"
+        return trajectories[0]
 
-        if num_steps == 0:
-            return 2
-        # Simulates actions based on order. Order is used to break ties.
-        simulated_first = self.simulate_steps(num_steps, actions_sorted[0])
-        if simulated_first == 0:
-            return actions_sorted[0]
-        else:
-            simulated_second = self.simulate_steps(num_steps, actions_sorted[1])
-            if simulated_second == 0:
-                return actions_sorted[1]
-            else:
-                simulated_third = self.simulate_steps(num_steps, actions_sorted[2])
-                if simulated_third == 0:
-                    return actions_sorted[2]
-                simulations = [simulated_first, simulated_second, simulated_third]
-                if sum(simulations) != 3:
-                    desired_action = max([2,0,1], key=lambda i: simulations[actions_sorted.index(i)])
-                    return desired_action
-                else:
-                    return self.driving_agent(num_steps=num_steps-1)
-                #return actions_sorted[desired_index]
-
-
-
-    def simulate_steps(self, num_steps, initial_input):
+    def simulate_steps(self, input_sequence):
         """
         Simulates the game for "steps" number of steps from the current trajectory.
         Returns whether there is a collision or the car goes off the track.
         Cannot display graphics of the simulated game.
         """
         simulated_game = RaceGame(graphics=False, input_red=copy.deepcopy(self.red), input_dummy_cars=copy.deepcopy(self.dummy_cars))
-        simulated_game.run_frame()
-        simulated_game.control_car(key_input=initial_input, driving_agent=False)
-        for _ in range(num_steps):
-            simulated_game.run_frame()
-            simulated_game.control_car(key_input=2)
-        return simulated_game.red.timesHit + simulated_game.red.carsHit >= 1
+        simulated_game.control_car(input_sequence=input_sequence, driving_agent=False)
+        return simulated_game.red.timesHit + simulated_game.red.carsHit

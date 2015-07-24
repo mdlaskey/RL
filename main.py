@@ -3,8 +3,7 @@ import pygame
 
 race_game = RaceGame(graphics=True, MAX_LAPS=3)
 while race_game.running:
-    race_game.run_frame()
-    race_game.control_car(driving_agent=True)
+    race_game.control_car(input_sequence=None, driving_agent=True)
 
 
 

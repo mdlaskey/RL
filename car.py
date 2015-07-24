@@ -54,7 +54,7 @@ class Sprite():
         self.xf = float(self.xc)
         self.yf = float(self.yc)
         self.speed = 0
-        self.gear = 5 # Acceleration
+        self.gear = 7 # Acceleration
         self.wobble = 0
         self.lap = 0
         self.pastId = 0
@@ -186,7 +186,7 @@ class Sprite():
         for d_car in dummycars:
             d = np.zeros(2)
             dist = LA.norm(d_car.cords -self.cords)
-            if(dist < 50 and d_car.id != self.pastId):
+            if(dist < 25 and d_car.id != self.pastId):
                 self.carsHit += 1
                 self.pastId = d_car.id 
         
@@ -196,7 +196,7 @@ class Sprite():
 
     def Update(self):
         self.speed = .95*self.speed + .05*(2.5*self.gear)
-        print self.gear,'\t',int(10.0*self.speed),'\t',self.lap
+        #print self.gear,'\t',int(10.0*self.speed),'\t',self.lap
         
 
         theta = self.view/57.296
