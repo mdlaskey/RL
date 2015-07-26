@@ -22,15 +22,18 @@ from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 
 class RaceGame:
-    def __init__(self, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15):
+    def __init__(self,agent = None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15):
         self.graphics = graphics
         self.turn_angle = turn_angle
-
+        self.agent = agent
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
         self.screen_size = (400,400)
+
+
         if self.graphics:
+            self.agent = agent
             self.screen = pygame.display.set_mode(self.screen_size)
             self.screen.fill((0,192,0))
             self.track_f = pygame.image.load('track.png')
@@ -46,7 +49,7 @@ class RaceGame:
         self.running = True
         if self.graphics:
             self.red = car.Sprite()
-        self.blue = dummy_car.Sprite()
+      
         self.font = pygame.font.Font(None,60)
 
         self.iterations = 0
@@ -78,7 +81,7 @@ class RaceGame:
 
         if self.graphics:
             self.red.Load('car_images',360,self.Track.returnStart())
-            self.car_list = self.Track.genCars(6*5)
+            self.car_list = self.Track.genCars(5*5)
             for car_p in self.car_list:
                 self.d_car = dummy_car.Sprite()
                 self.d_car.Load('car_images',360,car_p[0],car_p[1])
@@ -92,18 +95,15 @@ class RaceGame:
         self.retrain_net = False
         self.robot_only = False
 
-        if self.graphics:
-            self.agent = Dagger(self.intial_training)
+       
 
         self.frames = 0
         self.iters = 0
-        self.robot = learner.Learner()
-        if not self.intial_training:
-            self.robot.Load(retrain_net=self.retrain_net)
+       
 
     def run_frame(self):
         # Update screen
-        self.clock.tick(24)
+        
         self.iters += 1
         self.frames += 1
         self.car.frames = self.frames
@@ -119,6 +119,7 @@ class RaceGame:
             self.inbox = 1
 
         if self.graphics:
+            self.clock.tick(24)
             self.screen.fill((0,0,0))
             self.screen.blit(self.visible_track,(self.car.xs-self.red.xc,self.car.ys-self.red.yc))
             self.Track.Draw(self.screen,(self.red.xc-self.car.xs,self.red.yc-self.car.ys))
@@ -159,9 +160,7 @@ class RaceGame:
         Takes a control input and updates the environment.
         0 = "d", 1 = "a", 2 = others/none
         """
-        if(not self.intial_training):
-            ask_for_help = self.agent.askForHelp(self.state)
-
+        
         # Control
         if key_input != None:
             key = {K_f:False, K_d:False, K_a:False}
@@ -202,7 +201,7 @@ class RaceGame:
 
 
 
-        if (self.intial_training or ask_for_help == -1) and not self.robot_only:
+        if (self.intial_training):
             self.text = self.font.render("Human Control",1,(255,0,0))
             if key[K_d] :
                 self.red.view = self.calculate_new_angle(self.red.view, 'right')
@@ -218,7 +217,7 @@ class RaceGame:
 
         if self.graphics:
             pygame.display.flip()
-            #self.agent.integrateObservation(self.state,a)
+            self.agent.integrateObservation(self.state,a)
 
         if self.Track.getLap(self.red.xc,self.red.yc) > self.MAX_LAPS:
             if self.intial_training:
@@ -228,6 +227,7 @@ class RaceGame:
                 self.iters = 0
                 self.red.reset(self.dummy_cars)
 
+
         if not self.Track.IsOnTrack(self.red):
             self.red.wobble = 10
         else:
@@ -236,19 +236,7 @@ class RaceGame:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    self.running = False;
-                elif event.key == K_UP:
-                    self.red.gear = self.red.gear + 1
-                    if self.red.gear<4 :
-                        self.red.Shift_Up()
-                    if self.red.gear>4 :
-                        self.red.gear = 4
-                elif event.key == K_DOWN:
-                    self.red.gear = self.red.gear - 1
-                    if self.red.gear < 0:
-                        self.red.gear = 0
+           
         #print "coordinates", self.red.xc, self.red.yc
     def calculate_new_angle(self, original_angle, action):
         """
