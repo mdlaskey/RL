@@ -46,7 +46,6 @@ class RaceGame:
         self.running = True
         if self.graphics:
             self.red = car.Sprite()
-        self.blue = dummy_car.Sprite()
         self.font = pygame.font.Font(None,60)
 
         self.iterations = 0
@@ -77,12 +76,15 @@ class RaceGame:
             self.dummy_cars = input_dummy_cars
 
         if self.graphics:
+            print "Loading graphics"
             self.red.Load('car_images',360,self.Track.returnStart())
+            car.Static_Sprite.initialize_images(self.red.NF, self.red.path)
             self.car_list = self.Track.genCars(6*5)
             for car_p in self.car_list:
                 self.d_car = dummy_car.Sprite()
                 self.d_car.Load('car_images',360,car_p[0],car_p[1])
                 self.dummy_cars.append(self.d_car)
+            dummy_car.Static_Sprite.initialize_images((self.dummy_cars[0]).path)
 
         self.inbox = self.trap.collidepoint(self.red.xc,self.red.yc)
         self.lap = 0
@@ -133,27 +135,6 @@ class RaceGame:
                 d_car.Draw((self.red.xc-self.car.xs),(self.red.yc-self.car.ys),self.screen)
             else:
                 d_car.Update(self.Track)
-
-    def control_car(self, input_sequence=None, driving_agent=False):
-        """
-        Controls car using given input sequence.
-        Calculates input sequence if none is given and driving_agent is true.
-        """
-        if input_sequence:
-            for action in input_sequence:
-                self.run_frame()
-                self.control_car_step(action)
-        elif driving_agent:
-            input_sequence = self.driving_agent()
-            #print "input_sequence", [i for i in input_sequence]
-            #print "used_sequence", input_sequence[0:2]
-            for action in input_sequence[0:1]:
-                self.run_frame()
-                self.control_car_step(action)
-        else:
-            self.run_frame()
-            self.control_car_step()
-
     def control_car_step(self, key_input=None):
         """
         Takes a control input and updates the environment.
@@ -250,6 +231,25 @@ class RaceGame:
                     if self.red.gear < 0:
                         self.red.gear = 0
         #print "coordinates", self.red.xc, self.red.yc
+
+    def control_car(self, input_sequence=None, driving_agent=False, step_size=1):
+        """
+        Controls car using given input sequence.
+        Calculates input sequence if none is given and driving_agent is true.
+        """
+        if input_sequence:
+            for action in input_sequence:
+                self.run_frame()
+                self.control_car_step(action)
+        elif driving_agent:
+            input_sequence = self.driving_agent(step_size=step_size)
+            for action in input_sequence[0:step_size]:
+                self.run_frame()
+                self.control_car_step(action)
+        else:
+            self.run_frame()
+            self.control_car_step()
+
     def calculate_new_angle(self, original_angle, action):
         """
         Given an angle and action, calculates
@@ -262,7 +262,7 @@ class RaceGame:
         else:
             return original_angle
 
-    def driving_agent(self, num_steps=5, num_basic_steps=10):
+    def driving_agent(self, step_size=1, num_basic_steps=9, num_search_steps=5):
         """
         Determines whether to steer left or right
         based on local trajectory simulation.
@@ -273,6 +273,10 @@ class RaceGame:
         local search trajectory
 
         Returns first trajectory if no crash-free solution is found.
+
+        step_size: Number of steps to use in basic trajectory.
+        num_basic_steps: Number of no-action steps to extend basic trajectory with.
+        num_search_steps: Number of steps to use in search if basic trajectories crash.
         """
 
         # Determines order of actions to try based on deviation from 90 degree multiples
@@ -281,8 +285,9 @@ class RaceGame:
         deviations = [min(new_angles[i] % 90, abs((new_angles[i] % 90) - 90)) for i in range(3)]
         actions_sorted = sorted(range(3), key=lambda x: deviations[x])
 
-        basic_trajectories = [[i] + ([2] * (num_basic_steps - 1)) for i in actions_sorted]
-        trajectories = basic_trajectories + [i[::-1] for i in itertools.product([0,2,1], repeat=num_steps)]
+        # Calculates and simulates possible trajectories
+        basic_trajectories = [[i] + ([2] * num_basic_steps) for i in itertools.product(actions_sorted, repeat=step_size)]
+        trajectories = basic_trajectories + [i[::-1] for i in itertools.product([0,2,1], repeat=num_search_steps)]
         for input_sequence in trajectories:
             if self.simulate_steps(input_sequence) == 0:
                 return input_sequence

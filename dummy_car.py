@@ -29,16 +29,38 @@ HEIGHT = 6
 ANGLES = [0,89,179,269]
 
 ANGLES_IDX = [89,179,269,0]
-                             
-class Sprite():
 
+class Static_Sprite():
+    @staticmethod
+    def initialize_images(path):
+        Static_Sprite.images = []
+        for a in ANGLES_IDX:
+            name = path+'/computer_ '
+            Static_Sprite.images += [pygame.image.load(name+str(a)+'.png')]
+
+    @staticmethod
+    def draw_car(input_car, s_c, s_y, screen):
+        view = input_car.view + int(random.gauss(0,input_car.wobble))
+
+        if view < 0 :
+            view = view + 360
+        view = view%360
+        view = int(view/90)
+        input_car.x_s = input_car.xc-s_c-32
+        input_car.y_s = input_car.yc-s_y-32
+        #print input_car.x_s, input_car.y_s
+        Size = screen.get_bounding_rect()
+        if(input_car.x_s>0 and input_car.y_s>0 and input_car.x_s<=Size.width and input_car.y_s<=Size.height):
+            screen.blit(Static_Sprite.images[view],(input_car.x_s,input_car.y_s))
+
+        indicated = int(10.0*input_car.speed)
+
+class Sprite():
     def return_dir(self,track,screen=None):
-         
         return track.currentRectangle(self.xc,self.yc)
 
     def Load(self,path,NF,xs,ys):
         self.view = 270
-        self.images = []
         self.NF = NF
 #       self.xc = 1690
 #        self.yc = 2400
@@ -57,26 +79,11 @@ class Sprite():
         self.wobble = 0
         self.lap = 0
         self.cords = np.array([self.xf,self.yf])
-        for a in ANGLES_IDX:
-            nv = len(str(a))
-            name = path+'/computer_ '
-            self.images += [pygame.image.load(name+str(a)+'.png')]
+        self.path = path
+
 
     def Draw(self,s_c,s_y,screen):
-        view = self.view + int(random.gauss(0,self.wobble))
-#        print 'wobble = ',self.wobble
-        if view < 0 :
-            view = view + 360
-        view = view%360
-        view = int(view/90)
-        self.x_s = self.xc-s_c-32
-        self.y_s = self.yc-s_y-32
-        #print self.x_s, self.y_s
-        Size = screen.get_bounding_rect()
-        if(self.x_s>0 and self.y_s>0 and self.x_s<=Size.width and self.y_s<=Size.height):
-            screen.blit(self.images[view],(self.x_s,self.y_s))
-      
-        indicated = int(10.0*self.speed)
+        Static_Sprite.draw_car(self, s_c, s_y, screen)
       
     def Update(self,track,screen=None):
         
