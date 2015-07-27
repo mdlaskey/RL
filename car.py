@@ -41,11 +41,34 @@ shiftup_sound = pygame.mixer.Sound("sound/shift_up.wav")
 idle_sound = pygame.mixer.Sound("sound/idle_rev.wav")
 idle_sound.set_volume(0)
 idle_sound.play(loops=-1)
-                                
+
+class Static_Sprite():
+    @staticmethod
+    def initialize_images(NF, path):
+        Static_Sprite.images = []
+        for f in range(NF):
+            name = path+'/human_ '
+            Static_Sprite.images += [pygame.image.load(name+str(f)+'.png')]
+
+    @staticmethod
+    def draw_car(input_car, x, y, screen, frames, MAX_LAPS):
+        view = input_car.view + int(random.gauss(0,input_car.wobble))
+
+        if view < 0 :
+            view = view + 360
+        view = (view+270)%360
+
+        input_car.car_pos = [x,y]
+        input_car.screen = screen
+
+        screen.blit(Static_Sprite.images[view],(x-32,y-32))
+        indicated = int(10.0*input_car.speed)
+        if input_car.lap > MAX_LAPS :
+            elapsed_time = font.render(str(frames/24),1,(250,250,250))
+
 class Sprite():
-    def Load(self,path,NF,start):
+    def Load(self,path,NF,start, car_length=70, car_width=50):
         self.view = 270
-        self.images = []
         self.NF = NF
         self.start = start 
         self.start_v = self.view 
@@ -54,7 +77,7 @@ class Sprite():
         self.xf = float(self.xc)
         self.yf = float(self.yc)
         self.speed = 0
-        self.gear = 7 # Acceleration
+        self.gear = 5 # Acceleration
         self.wobble = 0
         self.lap = 0
         self.pastId = 0
@@ -62,27 +85,14 @@ class Sprite():
         self.pre_cords = self.cords
         self.carsHit = 0
         self.timeOffTrack = 0
-        self.timesHit = 0 
-        for f in range(NF):
-            nv = len(str(f+1))
-            name = path+'/human_ '
-            self.images += [pygame.image.load(name+str(f)+'.png')]
+        self.timesHit = 0
+        self.path = path
+        self.car_length = car_length
+        self.car_width = car_width
+
 
     def Draw(self,x,y,screen):
-        view = self.view + int(random.gauss(0,self.wobble))
-
-        if view < 0 :
-            view = view + 360
-        view = (view+270)%360
-
-        self.car_pos = [x,y]
-        self.screen = screen
-
-        screen.blit(self.images[view],(x-32,y-32))
-        indicated = int(10.0*self.speed)
-        if self.lap > MAX_LAPS :
-            elapsed_time = font.render(str(frames/24),1,(250,250,250))
-
+        Static_Sprite.draw_car(self, x, y, screen, frames, MAX_LAPS)
 
     def getRotate(self,d_cords):
         #convert to radians 
@@ -186,11 +196,10 @@ class Sprite():
         for d_car in dummycars:
             d = np.zeros(2)
             #dist = LA.norm(d_car.cords -self.cords)
-            car_bounds = pygame.Rect(d_car.cords[0],d_car.cords[1], 50, 25)
+            car_bounds = pygame.Rect(d_car.cords[0],d_car.cords[1], self.car_length, self.car_width)
             #if(dist < 45 and d_car.id != self.pastId):
             if (car_bounds.collidepoint(self.cords[0],self.cords[1]) and d_car.id != self.pastId):
                 self.carsHit += 1
-                print "HIT"
                 self.pastId = d_car.id 
         
         if(not track.IsOnTrack(self)):

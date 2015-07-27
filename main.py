@@ -6,6 +6,9 @@ import IPython
 import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
+import car
+import dummy_car
+
 
 rounds = 2
 results = []
@@ -34,3 +37,4 @@ IPython.embed()
 
 
 plt.show()
+

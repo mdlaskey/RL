@@ -184,7 +184,7 @@ class Track():
 
 
     def currentRectangle(self,x,y):
-      angle = random.choice(ANGLES)
+      angle = 0 #random.choice(ANGLES)
       rec = 0
       first = False
       dist_cent = 0

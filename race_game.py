@@ -22,18 +22,18 @@ from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 
 class RaceGame:
-    def __init__(self,agent = None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15):
+    def __init__(self,agent = None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15, initial_training=True):
         self.graphics = graphics
         self.turn_angle = turn_angle
         self.agent = agent
+        self.initial_training = initial_training
         self.cost = []
         self.queries = []
+
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
         self.screen_size = (400,400)
-
-
         if self.graphics:
             self.agent = agent
             self.screen = pygame.display.set_mode(self.screen_size)
@@ -51,7 +51,6 @@ class RaceGame:
         self.running = True
         if self.graphics:
             self.red = car.Sprite()
-      
         self.font = pygame.font.Font(None,60)
 
         self.iterations = 0
@@ -82,23 +81,22 @@ class RaceGame:
             self.dummy_cars = input_dummy_cars
 
         if self.graphics:
+            print "Loading graphics"
             self.red.Load('car_images',360,self.Track.returnStart())
-            self.car_list = self.Track.genCars(5*5)
+            car.Static_Sprite.initialize_images(self.red.NF, self.red.path)
+            self.car_list = self.Track.genCars(6*5)
             for car_p in self.car_list:
                 self.d_car = dummy_car.Sprite()
                 self.d_car.Load('car_images',360,car_p[0],car_p[1])
                 self.dummy_cars.append(self.d_car)
+            dummy_car.Static_Sprite.initialize_images((self.dummy_cars[0]).path)
 
         self.inbox = self.trap.collidepoint(self.red.xc,self.red.yc)
         self.lap = 0
 
         self.first_frame = True
-        self.intial_training = True
         self.retrain_net = False
         self.robot_only = False
-
-       
-
         self.frames = 0
         self.iters = 0
        
@@ -137,26 +135,6 @@ class RaceGame:
             else:
                 d_car.Update(self.Track)
 
-    def control_car(self, input_sequence=None, driving_agent=False):
-        """
-        Controls car using given input sequence.
-        Calculates input sequence if none is given and driving_agent is true.
-        """
-        if input_sequence:
-            for action in input_sequence:
-                self.run_frame()
-                self.control_car_step(action)
-        elif driving_agent:
-            input_sequence = self.driving_agent()
-            #print "input_sequence", [i for i in input_sequence]
-            #print "used_sequence", input_sequence[0:2]
-            for action in input_sequence[0:1]:
-                self.run_frame()
-                self.control_car_step(action)
-        else:
-            self.run_frame()
-            self.control_car_step()
-
     def control_car_step(self, key_input=None):
         """
         Takes a control input and updates the environment.
@@ -192,7 +170,7 @@ class RaceGame:
             self.red.timesHit += 1
             self.red.returnToTrack(self.Track)
 
-        if(self.iters>700 and not self.intial_training):
+        if(self.iters>700 and not self.initial_training):
             self.cars_hit.append(self.red.carsHit)
             self.iterations += 1
             self.timeOffTrack.append(self.red.timeOffTrack)
@@ -206,9 +184,7 @@ class RaceGame:
 
             self.iters = 0
 
-
-
-        if (self.intial_training):
+        if (self.initial_training):
             self.text = self.font.render("Human Control",1,(255,0,0))
             if key[K_d] :
                 self.red.view = self.calculate_new_angle(self.red.view, 'right')
@@ -228,13 +204,12 @@ class RaceGame:
 
         if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > 10:
             if self.intial_training:
+
                 self.agent.newModel()
-                self.intial_training = False
+                self.initial_training = False
                 self.agent.initialTraining = False
                 self.iters = 0
                 self.red.reset(self.dummy_cars)
-
-
 
         if not self.Track.IsOnTrack(self.red):
             self.red.wobble = 10
@@ -246,6 +221,25 @@ class RaceGame:
                 self.running = False
            
         #print "coordinates", self.red.xc, self.red.yc
+
+    def control_car(self, input_sequence=None, driving_agent=False, step_size=1):
+        """
+        Controls car using given input sequence.
+        Calculates input sequence if none is given and driving_agent is true.
+        """
+        if input_sequence:
+            for action in input_sequence:
+                self.run_frame()
+                self.control_car_step(action)
+        elif driving_agent and self.initial_training:
+            input_sequence = self.driving_agent(step_size=step_size)
+            for action in input_sequence[0:step_size]:
+                self.run_frame()
+                self.control_car_step(action)
+        else:
+            self.run_frame()
+            self.control_car_step()
+
     def calculate_new_angle(self, original_angle, action):
         """
         Given an angle and action, calculates
@@ -258,7 +252,8 @@ class RaceGame:
         else:
             return original_angle
 
-    def driving_agent(self, num_steps=3, num_basic_steps=10):
+
+    def driving_agent(self, step_size=1, num_basic_steps=9, num_search_steps=7):
         """
         Determines whether to steer left or right
         based on local trajectory simulation.
@@ -269,6 +264,10 @@ class RaceGame:
         local search trajectory
 
         Returns first trajectory if no crash-free solution is found.
+
+        step_size: Number of steps to use in basic trajectory.
+        num_basic_steps: Number of no-action steps to extend basic trajectory with.
+        num_search_steps: Number of steps to use in search if basic trajectories crash.
         """
 
         # Determines order of actions to try based on deviation from 90 degree multiples
@@ -277,8 +276,9 @@ class RaceGame:
         deviations = [min(new_angles[i] % 90, abs((new_angles[i] % 90) - 90)) for i in range(3)]
         actions_sorted = sorted(range(3), key=lambda x: deviations[x])
 
-        basic_trajectories = [[i] + ([2] * (num_basic_steps - 1)) for i in actions_sorted]
-        trajectories = basic_trajectories + [i[::-1] for i in itertools.product([0,2,1], repeat=num_steps)]
+        # Calculates and simulates possible trajectories
+        basic_trajectories = [[i] + ([2] * num_basic_steps) for i in itertools.product(actions_sorted, repeat=step_size)]
+        trajectories = basic_trajectories + [i[::-1] for i in itertools.product([0,2,1], repeat=num_search_steps)]
         for input_sequence in trajectories:
             if self.simulate_steps(input_sequence) == 0:
                 return input_sequence

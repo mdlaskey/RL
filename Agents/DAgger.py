@@ -44,7 +44,6 @@ class Dagger():
         if(not self.initialTraining):
             self.human_input += 1.0
         if (self.initialTraining or (self.actionTaken[0] != action[0])):
-            
             img = cv2.pyrDown((cv2.pyrDown(img)))
             winSize = (32,32)
             blockSize = (16,16)
