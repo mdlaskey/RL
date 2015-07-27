@@ -22,15 +22,18 @@ from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 
 class RaceGame:
-    def __init__(self, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15):
+    def __init__(self,agent=None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15, initial_training=True):
         self.graphics = graphics
         self.turn_angle = turn_angle
-
+        self.agent = agent
+        self.initial_training=initial_training
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
         self.screen_size = (400,400)
+
         if self.graphics:
+            self.agent = agent
             self.screen = pygame.display.set_mode(self.screen_size)
             self.screen.fill((0,192,0))
             self.track_f = pygame.image.load('track.png')
@@ -90,22 +93,16 @@ class RaceGame:
         self.lap = 0
 
         self.first_frame = True
-        self.intial_training = True
         self.retrain_net = False
         self.robot_only = False
 
-        if self.graphics:
-            self.agent = Dagger(self.intial_training)
-
         self.frames = 0
         self.iters = 0
-        self.robot = learner.Learner()
-        if not self.intial_training:
-            self.robot.Load(retrain_net=self.retrain_net)
+       
 
     def run_frame(self):
         # Update screen
-        self.clock.tick(24)
+        
         self.iters += 1
         self.frames += 1
         self.car.frames = self.frames
@@ -121,6 +118,7 @@ class RaceGame:
             self.inbox = 1
 
         if self.graphics:
+            self.clock.tick(24)
             self.screen.fill((0,0,0))
             self.screen.blit(self.visible_track,(self.car.xs-self.red.xc,self.car.ys-self.red.yc))
             self.Track.Draw(self.screen,(self.red.xc-self.car.xs,self.red.yc-self.car.ys))
@@ -135,14 +133,13 @@ class RaceGame:
                 d_car.Draw((self.red.xc-self.car.xs),(self.red.yc-self.car.ys),self.screen)
             else:
                 d_car.Update(self.Track)
+
     def control_car_step(self, key_input=None):
         """
         Takes a control input and updates the environment.
         0 = "d", 1 = "a", 2 = others/none
         """
-        if(not self.intial_training):
-            ask_for_help = self.agent.askForHelp(self.state)
-
+        
         # Control
         if key_input != None:
             key = {K_f:False, K_d:False, K_a:False}
@@ -172,7 +169,7 @@ class RaceGame:
             self.red.timesHit += 1
             self.red.returnToTrack(self.Track)
 
-        if(self.iters>700 and not self.intial_training):
+        if(self.iters>700 and not self.initial_training):
             self.cars_hit.append(self.red.carsHit)
             self.iterations += 1
             self.timeOffTrack.append(self.red.timeOffTrack)
@@ -181,9 +178,7 @@ class RaceGame:
             self.agent.updateModel()
             self.iters = 0
 
-
-
-        if (self.intial_training or ask_for_help == -1) and not self.robot_only:
+        if (self.initial_training):
             self.text = self.font.render("Human Control",1,(255,0,0))
             if key[K_d] :
                 self.red.view = self.calculate_new_angle(self.red.view, 'right')
@@ -199,15 +194,16 @@ class RaceGame:
 
         if self.graphics:
             pygame.display.flip()
-            #self.agent.integrateObservation(self.state,a)
+            self.agent.integrateObservation(self.state,a)
 
         if self.Track.getLap(self.red.xc,self.red.yc) > self.MAX_LAPS:
-            if self.intial_training:
+            if self.initial_training:
                 self.agent.newModel()
-                self.intial_training = False
-                self.agent.intial_training = False
+                self.initial_training = False
+                self.agent.initial_training = False
                 self.iters = 0
                 self.red.reset(self.dummy_cars)
+
 
         if not self.Track.IsOnTrack(self.red):
             self.red.wobble = 10
@@ -217,19 +213,7 @@ class RaceGame:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    self.running = False;
-                elif event.key == K_UP:
-                    self.red.gear = self.red.gear + 1
-                    if self.red.gear<4 :
-                        self.red.Shift_Up()
-                    if self.red.gear>4 :
-                        self.red.gear = 4
-                elif event.key == K_DOWN:
-                    self.red.gear = self.red.gear - 1
-                    if self.red.gear < 0:
-                        self.red.gear = 0
+           
         #print "coordinates", self.red.xc, self.red.yc
 
     def control_car(self, input_sequence=None, driving_agent=False, step_size=1):
@@ -241,7 +225,7 @@ class RaceGame:
             for action in input_sequence:
                 self.run_frame()
                 self.control_car_step(action)
-        elif driving_agent:
+        elif driving_agent and self.initial_training:
             input_sequence = self.driving_agent(step_size=step_size)
             for action in input_sequence[0:step_size]:
                 self.run_frame()

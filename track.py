@@ -5,13 +5,14 @@ import IPython
 import numpy as np
 from numpy import linalg as LA
 import random
+
 xs = 600
 ys = 450
 xt = xs - 100
 yt = ys + 100
 dt = 1.0
 BLACK = (0,0,0)
-BLUE = (  0,   0, 0)
+BLUE = (  0,   0, 255)
 TRACK_WIDTH = 200
 
 TRACK_LENGTH = 1250
@@ -53,7 +54,7 @@ class Track():
       
        random.seed(10)
 
-       self.finish = pygame.Rect(TRACK_LENGTH/2,START,200,TRACK_WIDTH)
+       self.finish = pygame.Rect(TRACK_LENGTH/2,r3_y,200,TRACK_WIDTH)
        self.inbox = False 
 
     def returnStart(self):
