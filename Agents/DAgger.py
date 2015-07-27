@@ -19,6 +19,7 @@ class Dagger():
         self.States = []
         self.Actions = []
         self.learner = Learner()
+        self.learner.use_AHQP = False
         self.human_input = 0.0
 
     def getName(self):

@@ -226,7 +226,7 @@ class RaceGame:
             pygame.display.flip()
             self.agent.integrateObservation(self.state,a)
 
-        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > 2:
+        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > 10:
             if self.intial_training:
                 self.agent.newModel()
                 self.intial_training = False

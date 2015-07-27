@@ -16,48 +16,76 @@ from sklearn.metrics.pairwise import linear_kernel
 from cvxopt import matrix, solvers
 
 import IPython
-import time
+
+
+
 
 class AHQP():
 
 	B = 1000
-	nu_g = 1e-3
+
 	nu_b = 0.9
+	
+	def __init__(self,sigma=150.0,nu=1e-1):
+		self.sigma = sigma
+		self.nu_g = nu
+
 
 	def assembleKernel(self,data,labels):
 		self.m = data.shape[0]
 		self.data = data
-		sigma = 0.01
-		self.gamma = -1.0/(2*sigma**2)
+		
+		self.gamma = -1.0/(2.0*self.sigma**2)
 		self.labels = labels
-		self.G = squareform(pdist(data, 'euclidean'))
+		self.G = squareform(pdist(data))
 
 		self.G = np.exp((self.G**2)*self.gamma)
-
+		
 		labels = np.ravel(labels)
 		W = np.diag(labels)
-		
-		self.K = np.dot(W.T,np.dot(self.G,W))
-		return self.K
+
+		self.K = np.dot(W.T,np.dot(self.G,W)) 
+	
+		self.K = self.K
 
 	def assembleKernelSparse(self,data,labels):
-
-		data = csr_matrix(data)
-
+	
 		self.m = data.shape[0]
 		self.data = data
-		self.gamma = 1e-2
+		self.gamma = -1.0/(2*self.sigma**2)
 		self.labels = labels
 		self.G = euclidean_distances(data)
 
-		self.G = np.exp((self.G ** 2)*-self.gamma)
+		self.G = np.exp((self.G ** 2)*self.gamma)
 		labels = np.ravel(labels)
 		W = np.diag(labels)
 
 		self.K = W.T.dot(self.G.dot(W))
 		return self.K
 
-	def solveQP(self,dim):
+
+	def getScoreNovel(self, states,labels):
+
+		
+		
+		#self.
+		#IPython.embed()
+		#IPython.embed()
+		num_samples = states.shape[0]
+		incorrect = 0.0
+
+		for i in range(num_samples):
+			ans = self.predict(states[i, :])
+			if(ans == 1.0 and self.labels[i] == -1.0):
+				incorrect += 1.0
+			if(ans == -1.0 and self.labels[i] == 1.0):
+				incorrect += 1.0
+
+		return incorrect/float(num_samples)
+		
+
+	def solveQP(self):
+
 		P = matrix(self.K)
 		q = matrix(np.zeros((self.m,1)))
 
@@ -82,7 +110,7 @@ class AHQP():
 		A = matrix(A)
 		b = matrix(b)
 
-
+	
 
 		sol = solvers.qp(P,q,G,h,A,b)
 		self.weights = np.array(sol['x'])
@@ -93,14 +121,15 @@ class AHQP():
 		self.caculateRho()
 		#IPython.embed()
 		return self.weights
+
 	def caculateRho(self):
 		mw = 0.0
 		for i in range(self.data.shape[0]):
 			if(mw < self.weights[i] and self.weights[i]<0.9/(self.nu_g*self.m)):
 				mw = self.weights[i]
 				maxSup = i 
-
-		self.rho = np.sum(np.ravel(self.labels*self.weights) * self.G[:,maxSup])
+	
+		self.rho = np.sum(np.ravel(self.labels*self.weights.T) * self.G[:,maxSup])
 
 	def predict(self,x):
 		k = np.zeros((self.m,1))
@@ -112,7 +141,7 @@ class AHQP():
 		# k = self.G[:,self.G.shape[0]-1]
 		# k = k[0:self.G.shape[0]-1]
 		
-		ans = np.sign(np.sum(np.ravel(self.labels*self.weights)*np.ravel(k)) - self.rho)
+		ans = np.sign(np.sum(np.ravel(self.labels*self.weights.T)*np.ravel(k)) - self.rho)
 
 		if(ans == 0.0):
 			return 1
@@ -123,6 +152,3 @@ class AHQP():
 	def rbf(self,x_0,x_1):
 		ed = euclidean_distances(x_0,x_1)
 		return np.exp(ed**2*self.gamma)
-
-
-
