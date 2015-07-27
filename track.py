@@ -76,6 +76,7 @@ class Track():
     def genCars(self,num_cars):
       cars_per_track = num_cars/4
       car_list = []
+      random.seed(10)
       for tr in self.track:
         width = tr.right-20 - tr.left+20
         height = tr.top+20 - tr.bottom-20 
@@ -183,7 +184,7 @@ class Track():
 
 
     def currentRectangle(self,x,y):
-      angle = random.choice(ANGLES)
+      angle = 0 #random.choice(ANGLES)
       rec = 0
       first = False
       dist_cent = 0

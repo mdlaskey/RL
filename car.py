@@ -67,7 +67,7 @@ class Static_Sprite():
             elapsed_time = font.render(str(frames/24),1,(250,250,250))
 
 class Sprite():
-    def Load(self,path,NF,start):
+    def Load(self,path,NF,start, car_length=70, car_width=50):
         self.view = 270
         self.NF = NF
         self.start = start 
@@ -77,7 +77,7 @@ class Sprite():
         self.xf = float(self.xc)
         self.yf = float(self.yc)
         self.speed = 0
-        self.gear = 7 # Acceleration
+        self.gear = 5 # Acceleration
         self.wobble = 0
         self.lap = 0
         self.pastId = 0
@@ -87,6 +87,8 @@ class Sprite():
         self.timeOffTrack = 0
         self.timesHit = 0
         self.path = path
+        self.car_length = car_length
+        self.car_width = car_width
 
 
     def Draw(self,x,y,screen):
@@ -194,7 +196,7 @@ class Sprite():
         for d_car in dummycars:
             d = np.zeros(2)
             #dist = LA.norm(d_car.cords -self.cords)
-            car_bounds = pygame.Rect(d_car.cords[0],d_car.cords[1], 75, 35)
+            car_bounds = pygame.Rect(d_car.cords[0],d_car.cords[1], self.car_length, self.car_width)
             #if(dist < 45 and d_car.id != self.pastId):
             if (car_bounds.collidepoint(self.cords[0],self.cords[1]) and d_car.id != self.pastId):
                 self.carsHit += 1

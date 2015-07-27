@@ -22,16 +22,18 @@ from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 
 class RaceGame:
-    def __init__(self,agent=None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15, initial_training=True):
+    def __init__(self,agent = None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15, initial_training=True):
         self.graphics = graphics
         self.turn_angle = turn_angle
         self.agent = agent
-        self.initial_training=initial_training
+        self.initial_training = initial_training
+        self.cost = []
+        self.queries = []
+
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
         self.screen_size = (400,400)
-
         if self.graphics:
             self.agent = agent
             self.screen = pygame.display.set_mode(self.screen_size)
@@ -95,7 +97,6 @@ class RaceGame:
         self.first_frame = True
         self.retrain_net = False
         self.robot_only = False
-
         self.frames = 0
         self.iters = 0
        
@@ -174,8 +175,13 @@ class RaceGame:
             self.iterations += 1
             self.timeOffTrack.append(self.red.timeOffTrack)
             self.timeHit.append(self.red.timesHit)
+            self.cost.append(self.red.carsHit+self.red.timeOffTrack)
+            self.queries.append(self.agent.human_input)
             self.red.reset(self.dummy_cars)
+            if(self.iterations > self.MAX_LAPS):
+                self.running = False
             self.agent.updateModel()
+
             self.iters = 0
 
         if (self.initial_training):
@@ -196,14 +202,13 @@ class RaceGame:
             pygame.display.flip()
             self.agent.integrateObservation(self.state,a)
 
-        if self.Track.getLap(self.red.xc,self.red.yc) > self.MAX_LAPS:
+        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > self.MAX_LAPS:
             if self.initial_training:
                 self.agent.newModel()
                 self.initial_training = False
-                self.agent.initial_training = False
+                self.agent.initialTraining = False
                 self.iters = 0
                 self.red.reset(self.dummy_cars)
-
 
         if not self.Track.IsOnTrack(self.red):
             self.red.wobble = 10
@@ -246,7 +251,8 @@ class RaceGame:
         else:
             return original_angle
 
-    def driving_agent(self, step_size=1, num_basic_steps=9, num_search_steps=5):
+
+    def driving_agent(self, step_size=1, num_basic_steps=9, num_search_steps=7):
         """
         Determines whether to steer left or right
         based on local trajectory simulation.
@@ -285,5 +291,8 @@ class RaceGame:
         Cannot display graphics of the simulated game.
         """
         simulated_game = RaceGame(graphics=False, input_red=copy.deepcopy(self.red), input_dummy_cars=copy.deepcopy(self.dummy_cars))
+        simulated_game.red.timesHit = 0
+        simulated_game.red.carsHit = 0
+
         simulated_game.control_car(input_sequence=input_sequence, driving_agent=False)
         return simulated_game.red.timesHit + simulated_game.red.carsHit

@@ -40,8 +40,9 @@ class Dagger():
 
     def integrateObservation(self, img,action):
         """This method stores the observation inside the agent"""
-        if (self.initialTraining or (self.actionTaken[0] != action[0])):
+        if(not self.initialTraining):
             self.human_input += 1.0
+        if (self.initialTraining or (self.actionTaken[0] != action[0])):
             img = cv2.pyrDown((cv2.pyrDown(img)))
             winSize = (32,32)
             blockSize = (16,16)
