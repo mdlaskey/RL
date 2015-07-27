@@ -76,6 +76,7 @@ class Track():
     def genCars(self,num_cars):
       cars_per_track = num_cars/4
       car_list = []
+      random.seed(10)
       for tr in self.track:
         width = tr.right-20 - tr.left+20
         height = tr.top+20 - tr.bottom-20 

@@ -26,6 +26,8 @@ class RaceGame:
         self.graphics = graphics
         self.turn_angle = turn_angle
         self.agent = agent
+        self.cost = []
+        self.queries = []
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
@@ -195,8 +197,13 @@ class RaceGame:
             self.iterations += 1
             self.timeOffTrack.append(self.red.timeOffTrack)
             self.timeHit.append(self.red.timesHit)
+            self.cost.append(self.red.carsHit+self.red.timeOffTrack)
+            self.queries.append(self.agent.human_input)
             self.red.reset(self.dummy_cars)
+            if(self.iterations > self.MAX_LAPS):
+                self.running = False
             self.agent.updateModel()
+
             self.iters = 0
 
 
@@ -219,13 +226,14 @@ class RaceGame:
             pygame.display.flip()
             self.agent.integrateObservation(self.state,a)
 
-        if self.Track.getLap(self.red.xc,self.red.yc) > self.MAX_LAPS:
+        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > 2:
             if self.intial_training:
                 self.agent.newModel()
                 self.intial_training = False
-                self.agent.intial_training = False
+                self.agent.initialTraining = False
                 self.iters = 0
                 self.red.reset(self.dummy_cars)
+
 
 
         if not self.Track.IsOnTrack(self.red):
@@ -250,7 +258,7 @@ class RaceGame:
         else:
             return original_angle
 
-    def driving_agent(self, num_steps=5, num_basic_steps=10):
+    def driving_agent(self, num_steps=3, num_basic_steps=10):
         """
         Determines whether to steer left or right
         based on local trajectory simulation.
@@ -284,5 +292,8 @@ class RaceGame:
         Cannot display graphics of the simulated game.
         """
         simulated_game = RaceGame(graphics=False, input_red=copy.deepcopy(self.red), input_dummy_cars=copy.deepcopy(self.dummy_cars))
+        simulated_game.red.timesHit = 0
+        simulated_game.red.carsHit = 0
+
         simulated_game.control_car(input_sequence=input_sequence, driving_agent=False)
         return simulated_game.red.timesHit + simulated_game.red.carsHit
