@@ -10,6 +10,7 @@ from sklearn import linear_model
 from sklearn import metrics 
 from scipy.sparse import csr_matrix
 from scipy.sparse import vstack
+from Tools.AHQP import AHQP
 
 import sys
 
@@ -32,7 +33,7 @@ class Learner():
 	gamma_clf = 1e-3
 	first_time = True
 	iter_  = 1
-
+	use_AHQP = True 
 	# Neural net implementation
 	neural = False
 
@@ -42,6 +43,9 @@ class Learner():
 	SOLVER_FILE_FT = os.path.join(NET_SUBDIR, 'net_solver_ft.prototxt')
 	MODEL_FILE = os.path.join(NET_SUBDIR, 'net_model.prototxt')
 	TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_1000.caffemodel')
+
+	def __init__(self,sigma=1.0):
+		self.ahqp_solver = AHQP()
 
 	def Load(self,gamma = 1e-3, retrain_net=False):
 		self.sup_states = pickle.load(open('states.p','rb'))
@@ -114,53 +118,31 @@ class Learner():
 		Uses neural net or SVM based on global
 		settings.
 		"""
-		if not retrain_net:
-			States, Action = States[1:], Action[1:]
-			print "States.shape"
-			print States.shape
-			print "Action.shape"
-			print Action.shape
+		
+		States, Action = States[1:], Action[1:]
+		print "States.shape"
+		print States.shape
+		print "Action.shape"
+		print Action.shape
 
-			Action = np.ravel(Action)
+		Action = np.ravel(Action)
 
-		if self.neural:
-			if not retrain_net:
-				# Neural net implementation
-				self.output_images(States, Action)
-			# Change to "caffe.set_mode_gpu() for GPU mode"
-			caffe.set_mode_cpu()
+		# Original SVC implementation
+		self.clf = svm.LinearSVC()
+		#self.clf.class_weight = 'auto' 
+		self.clf.C = 1e-2
+		
+		self.clf.fit(States[:,:,0], Action)
 
-			solver = caffe.get_solver(self.SOLVER_FILE)
-			if(fineTune):
-				solver = caffe.get_solver(self.SOLVER_FILE_FT)
-				solver.net.copy_from(self.TRAINED_MODEL)
-				self.TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_500.caffemodel')
-			solver.solve()
+		if (self.verbose or self.use_AHQP):
+			self.debugPolicy(States[:,:,0], Action)
 
-		else:
-			# Original SVC implementation
-			self.clf = svm.LinearSVC()
-			#self.clf.class_weight = 'auto' 
-			self.clf.C = 1e-2
+			self.scaler = preprocessing.StandardScaler().fit(States[:,:,0])
+			States = self.scaler.transform(States[:,:,0])
+			self.ahqp_solver.assembleKernel(States, self.labels)
+			self.ahqp_solver.solveQP()
 
-			self.clf.fit(States[:,:,0], Action)
-
-		"""
-		# Original novel implementation
-		self.novel = svm.OneClassSVM()
-
-		self.novel.gamma = self.gamma
-		self.novel.nu = 1e-3
-		self.novel.kernel = 'rbf'
-		self.novel.verbose = False
-		self.novel.shrinking = False
-		self.novel.max_iter = 3000
-
-		self.novel.fit(States)
-
-		if (self.verbose):
-			self.debugPolicy(States, Action)
-		"""
+			
 	def getScoreNovel(self,States):
 		num_samples = States.shape[0]
 		avg = 0
@@ -172,23 +154,27 @@ class Learner():
 
 		return avg
 
-	def debugPolicy(self,States,Action):
+	def debugPolicy(self, States, Action):
+	
 		prediction = self.clf.predict(States)
 		classes = dict()
-
-		for i in range(self.getNumData()):
-			if(Action[i] not in classes):
+		self.labels = np.zeros(Action.shape)
+		for i in range(Action.shape[0]):
+			if (Action[i] not in classes):
 				value = np.zeros(3)
-				classes.update({Action[i]:value})
+				classes.update({Action[i]: value})
 			classes[Action[i]][0] += 1
-			if(Action[i] != prediction[i]):
+			if (Action[i] != prediction[i]):
 				classes[Action[i]][1] += 1
-
-			classes[Action[i]][2] = classes[Action[i]][1]/classes[Action[i]][0]
+				self.labels[i] = -1.0
+			else:
+				self.labels[i] = 1.0
+			classes[Action[i]][2] = classes[Action[i]][1] / classes[Action[i]][0]
 		for d in classes:
 			print d, classes[d]
 
-		self.precision = self.clf.score(States,Action)
+		self.precision = self.clf.score(States, Action)
+
 
 	def getPrecision(self):
 		return self.precision
@@ -287,28 +273,13 @@ class Learner():
 
 			return self.clf.predict(state.T)
 
-	def askForHelp(self,img):
-
-		net = caffe.Net (self.MODEL_FILE,self.TRAINED_MODEL,caffe.TEST)
-		data4D = np.zeros([1,3,125,125])
-
-		# Fill in last 3 dimensions
-
-		img = cv2.pyrDown((cv2.pyrDown(img)))
-
-		data4D[0,0,:,:] = img[:,:,0]
-		data4D[0,1,:,:] = img[:,:,1]
-		data4D[0,2,:,:] = img[:,:,2]
-
-		net.blobs['data'].data[...] = data4D
-		net.forward(start='conv1',end='fc1')
-		state = net.blobs['fc1'].data
-
+	def askForHelp(self,state):
+	
 		state = self.scaler.transform(state)
-		return self.novel.predict(state)
+		return self.ahqp_solver.predict(state)
 
 	def getNumData(self):
-		return self.Actions.shape[0]
+		return self.Action.shape[0]
 
 	def newModel(self,states,actions):
 		states = csr_matrix(states)
