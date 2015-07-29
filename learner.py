@@ -225,7 +225,7 @@ class Learner():
 		self.novel = svm.OneClassSVM()
 
 
-		self.novel.gamma = 1e-3
+		self.novel.gamma = self.gamma.clf # Gamma
 		self.novel.nu = 1e-3
 		self.novel.kernel = 'rbf'
 		self.novel.verbose = True

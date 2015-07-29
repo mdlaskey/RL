@@ -8,8 +8,8 @@ import random
 
 xs = 600
 ys = 450
-xt = xs - 100
-yt = ys + 100
+xt = xs #- 100
+yt = ys #+ 100
 dt = 1.0
 BLACK = (0,0,0)
 BLUE = (  0,   0, 255)
@@ -78,12 +78,12 @@ class Track():
       car_list = []
       random.seed(10)
       for tr in self.track:
-        width = tr.right-20 - tr.left+20
-        height = tr.top+20 - tr.bottom-20 
+        width = tr.right-50 - tr.left+50
+        height = tr.top+50 - tr.bottom-50
         widthInt = width/5
         heightInt = height/3
-        heightPos = range(tr.bottom-20,tr.top+20,heightInt)
-        widthPos = range(tr.left+20,tr.right-20,widthInt)
+        heightPos = range(tr.bottom-50,tr.top+50,heightInt)
+        widthPos = range(tr.left+50,tr.right-50,widthInt)
 
         for i in range(cars_per_track):
           
@@ -184,11 +184,11 @@ class Track():
 
 
     def currentRectangle(self,x,y):
-      angle = 0 #random.choice(ANGLES)
+      angle = None
       rec = 0
       first = False
       dist_cent = 0
-      for tr in self.track: 
+      for tr in self.track:
         if(tr.collidepoint(x,y)):
           if(not first):
             dist_cent = self.center_rec(x,y,tr,rec)
@@ -200,8 +200,6 @@ class Track():
               angle = ANGLES[rec]
             
             dist_cent = self.center_rec(x,y,tr,rec)
-  
-
         rec+=1
       if(self.track[0].collidepoint(x,y) and self.track[3].collidepoint(x,y)):
         if( self.center_rec(x,y,tr,rec) >= 90 or self.center_rec(x,y,self.track[0],0) >= dist_cent):
@@ -211,6 +209,45 @@ class Track():
         #IPython.embed()
       #print rec,angle
       return angle
+
+    def closest_rectangle_to_car(self, car):
+      """
+      Returns the index of the closest rectangle to the car
+      """
+      dist = 1e6
+      pos = np.array([car.xc, car.yc])
+      for i in range(4):
+        tr = self.track[i]
+        cent = np.array([tr.centerx,tr.centery])
+        if dist > LA.norm(pos-cent):
+          dist = LA.norm(pos-cent)
+          index = i
+          closest = tr
+
+      return index
+
+    def desired_rectangle_angle(self, car):
+      """
+      Returns the current angle that the car should be facing,
+      based on the current location.
+      """
+      current_rectangles = []
+      for i in range(len(self.track)):
+        if self.track[i].collidepoint(car.xc, car.yc):
+          current_rectangles += [i]
+      if len(current_rectangles) == 0:
+        current_rectangles = [self.closest_rectangle_to_car(car)]
+      if len(current_rectangles) == 1:
+        current_rectangles = current_rectangles[0]
+      elif len(current_rectangles) == 2:
+        # Edge case: Rectangles 0, 3
+        if 0 in current_rectangles and 3 in current_rectangles:
+          current_rectangles = 0
+        # Otherwise take latest rectangle
+        else:
+          current_rectangles = max(current_rectangles)
+      # print "current_rectangles", current_rectangles
+      return ((current_rectangles + 1) % 4) * 90
 
     def IsOnTrack(self,car):
       T = False 

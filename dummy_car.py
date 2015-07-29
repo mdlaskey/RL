@@ -46,9 +46,10 @@ class Static_Sprite():
             view = view + 360
         view = view%360
         view = int(view/90)
-        input_car.x_s = input_car.xc-s_c-32
-        input_car.y_s = input_car.yc-s_y-32
-        #print input_car.x_s, input_car.y_s
+        #print "before", input_car.x_s, input_car.y_s
+        input_car.x_s = input_car.xc-s_c#-32
+        input_car.y_s = input_car.yc-s_y#-32
+        #print "after", input_car.x_s, input_car.y_s
         Size = screen.get_bounding_rect()
         if(input_car.x_s>0 and input_car.y_s>0 and input_car.x_s<=Size.width and input_car.y_s<=Size.height):
             screen.blit(Static_Sprite.images[view],(input_car.x_s,input_car.y_s))
@@ -100,8 +101,8 @@ class Sprite():
         self.xf = self.xf + vx*dt
         self.yf = self.yf + vy*dt
         self.pre_cords = self.cords 
-        self.cords[0] = self.xf
-        self.cords[1] = self.yf
+        self.cords[0] = self.xf #+ 32
+        self.cords[1] = self.yf #+ 32
         self.xc = int(self.xf)
         self.yc = int(self.yf)
         sound.set_volume(0)
