@@ -68,7 +68,7 @@ class Sprite():
 
         self.xc = xs
         self.yc = ys
-        self.id = xs 
+        self.id = xs + ys
         self.xf = float(self.xc)
         self.yf = float(self.yc)
         self.startXf = self.xf

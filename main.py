@@ -1,6 +1,6 @@
 from race_game import RaceGame
 from Agents.DAgger import Dagger
-from Agents.SHEATH import SHEATH
+#from Agents.SHEATH import SHEATH
 import pygame
 import IPython
 import numpy as np

@@ -198,9 +198,10 @@ class Sprite():
             #dist = LA.norm(d_car.cords -self.cords)
             car_bounds = pygame.Rect(d_car.cords[0],d_car.cords[1], self.car_length, self.car_width)
             #if(dist < 45 and d_car.id != self.pastId):
+
             if (car_bounds.collidepoint(self.cords[0],self.cords[1]) and d_car.id != self.pastId):
                 self.carsHit += 1
-                self.pastId = d_car.id 
+                self.pastId = d_car.id
         
         if(not track.IsOnTrack(self)):
             self.timeOffTrack +=1 

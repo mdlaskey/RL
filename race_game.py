@@ -86,10 +86,18 @@ class RaceGame:
             car.Static_Sprite.initialize_images(self.red.NF, self.red.path)
             self.car_list = self.Track.genCars(6*5)
             for car_p in self.car_list:
-                self.d_car = dummy_car.Sprite()
-                self.d_car.Load('car_images',360,car_p[0],car_p[1])
-                self.dummy_cars.append(self.d_car)
+                d_car = dummy_car.Sprite()
+                d_car.Load('car_images',360,car_p[0],car_p[1])
+                self.dummy_cars.append(d_car)
+
+            # coordinates = [(d_car.xc, d_car.yc) for d_car in self.dummy_cars]
+            # print "original", len(coordinates), coordinates
+            # print "new", len(set(coordinates)), set(coordinates)
+            self.update_dummy_ids()
+
             dummy_car.Static_Sprite.initialize_images((self.dummy_cars[0]).path)
+            print [d_car.id for d_car in self.dummy_cars]
+            print "Done"
 
         self.inbox = self.trap.collidepoint(self.red.xc,self.red.yc)
         self.lap = 0
@@ -135,12 +143,24 @@ class RaceGame:
             else:
                 d_car.Update(self.Track)
 
+    def update_dummy_ids(self):
+        updating = True
+        while updating:
+            updating = False
+            for i in range(len(self.dummy_cars)):
+                for j in range(i + 1, len(self.dummy_cars)):
+                    if self.dummy_cars[i].id == self.dummy_cars[j].id and i != j:
+                        self.dummy_cars[j].id += 1
+                        updating = True
+        dummy_car_ids = [d_car.id for d_car in self.dummy_cars]
+        assert len(set(dummy_car_ids)) == len(dummy_car_ids)
+
+
     def control_car_step(self, key_input=None):
         """
         Takes a control input and updates the environment.
         0 = "d", 1 = "a", 2 = others/none
         """
-        
         # Control
         if key_input != None:
             key = {K_f:False, K_d:False, K_a:False}
@@ -227,6 +247,7 @@ class RaceGame:
         Controls car using given input sequence.
         Calculates input sequence if none is given and driving_agent is true.
         """
+        original_crashes = self.red.carsHit + self.red.timesHit + self.red.timeOffTrack
         if input_sequence:
             for action in input_sequence:
                 self.run_frame()
@@ -243,6 +264,9 @@ class RaceGame:
         else:
             self.run_frame()
             self.control_car_step()
+        # new_crashes = self.red.carsHit + self.red.timesHit + self.red.timeOffTrack
+        # if new_crashes > original_crashes:
+        #     print "CRASHED", new_crashes
 
     def calculate_new_angle(self, original_angle, action):
         """
@@ -300,9 +324,11 @@ class RaceGame:
         Returns whether there is a collision or the car goes off the track.
         Cannot display graphics of the simulated game.
         """
+        original_time_off_track = self.red.timeOffTrack
         simulated_game = RaceGame(graphics=False, input_red=copy.deepcopy(self.red), input_dummy_cars=copy.deepcopy(self.dummy_cars))
         simulated_game.red.timesHit = 0
         simulated_game.red.carsHit = 0
 
         simulated_game.control_car(input_sequence=input_sequence, driving_agent=False)
-        return simulated_game.red.timesHit + simulated_game.red.carsHit
+        extra_time_off_track = self.red.timeOffTrack - original_time_off_track
+        return simulated_game.red.timesHit + simulated_game.red.carsHit + extra_time_off_track
