@@ -56,7 +56,7 @@ class Static_Sprite():
         indicated = int(10.0*input_car.speed)
 
 class Sprite():
-    def return_dir(self,track,screen=None):
+    def return_dir(self,track):
         return track.currentRectangle(self.xc,self.yc)
 
     def Load(self,path,NF,xs,ys):
@@ -85,9 +85,9 @@ class Sprite():
     def Draw(self,s_c,s_y,screen):
         Static_Sprite.draw_car(self, s_c, s_y, screen)
       
-    def Update(self,track,screen=None):
+    def Update(self,track):
         
-        theta = self.return_dir(track,screen)
+        theta = self.return_dir(track)
 
         if self.wobble :
             idle_sound.set_volume(1.)

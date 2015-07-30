@@ -26,7 +26,7 @@ class AHQP():
 
 	nu_b = 0.9
 	
-	def __init__(self,sigma=150.0,nu=1e-1):
+	def __init__(self,sigma=0.4,nu=0.1):
 		self.sigma = sigma
 		self.nu_g = nu
 
@@ -128,7 +128,7 @@ class AHQP():
 			if(mw < self.weights[i] and self.weights[i]<0.9/(self.nu_g*self.m)):
 				mw = self.weights[i]
 				maxSup = i 
-	
+		
 		self.rho = np.sum(np.ravel(self.labels*self.weights.T) * self.G[:,maxSup])
 
 	def predict(self,x):

@@ -13,6 +13,7 @@ from scipy.spatial.distance import pdist,squareform
 from cvxopt import matrix, solvers
 from AHQP import AHQP
 import matplotlib.pyplot as plt
+from sklearn.neighbors import KernelDensity
 
 import matplotlib.pyplot as plt
 import matplotlib.font_manager
@@ -42,38 +43,53 @@ def test_sparse_implementations(ahqp, data, labels):
 	print a, b, c
 
 DIM = 2
+NUM_SAMPLES = 1000
 
-mean = np.zeros(DIM)
-mean_p = np.zeros(DIM)+10
 
-cov = np.eye(DIM)
+
+# data = pickle.load(open('states.p','rb'))
+
+#Sample from a GMM 
+mean_1 = np.zeros(DIM)+np.array([-2,2])
+mean_2 = np.zeros(DIM)+np.array([2,-2])
+mean_3 = np.zeros(DIM)+np.array([2,2])
+
+cov = np.eye(DIM)*0.1
 cov_p = np.eye(DIM)
 
+data_1 = np.random.multivariate_normal(mean_1,cov,NUM_SAMPLES)
+data_2 = np.random.multivariate_normal(mean_2,cov,NUM_SAMPLES)
+data_3 = np.random.multivariate_normal(mean_3,cov,NUM_SAMPLES)
+data_idx = np.random.multinomial(NUM_SAMPLES,[0.3,0.2,0.5])
+data = np.zeros([NUM_SAMPLES,DIM])
 
-data = pickle.load(open('states.p','rb'))
-#data = np.random.multivariate_normal(mean,cov,10)
-data = data[:,1:3]
-DIM = data.shape[0]
-labels = np.zeros((DIM,1))+1.0
-#IPython.embed()
+data[0:0.3*NUM_SAMPLES,:] = data_1[0:0.3*NUM_SAMPLES,:]
+o = 0.3*NUM_SAMPLES -1 
+data[o:o+0.2*NUM_SAMPLES,:] = data_2[0:0.2*NUM_SAMPLES,:]
+o = 0.3*NUM_SAMPLES -1 + 0.2*NUM_SAMPLES-1
+data[o:o+0.5*NUM_SAMPLES+2,:] = data_3[0:0.5*NUM_SAMPLES+2,:]
+
+labels = np.zeros(NUM_SAMPLES)+1.0
+
+# data = data[:,1:3]
+# DIM = data.shape[0]
+# labels = np.zeros((DIM,1))+1.0
+# #IPython.embed()
 for i in range(data.shape[0]):
-	if((data[i,0]<200.0 and data[i,1] > 800) or (data[i,0]>800.0 and data[i,1] < 400.0)):
+	if((data[i,1]>1.75 and data[i,1] < 2.25 and data[i,0] >1.75 and data[i,0]<2.25)):
 		labels[i] = -1.0
-
+	if((data[i,1]<-1.75 and data[i,1] > -2.25 and data[i,0] >1.75 and data[i,0]<2.25)):
+		labels[i] = -1.0
 ahqp= AHQP()
 
-#ahqp.assembleKernel(data,labels)
+ahqp.assembleKernel(data,labels)
 
-test_sparse_implementations(ahqp, data, labels)
-
-
-
-weights = ahqp.solveQP(DIM)
+weights = ahqp.solveQP()
 
 
 # Learn a frontier for outlier detection with several classifiers
-xx1, yy1 = np.meshgrid(np.linspace(1400,0, 50), np.linspace(1400, 0, 50))
-# xx1, yy1 = np.meshgrid(np.linspace(-4,4), np.linspace(-4, 4))
+#xx1, yy1 = np.meshgrid(np.linspace(1400,0, 50), np.linspace(1400, 0, 50))
+xx1, yy1 = np.meshgrid(np.linspace(-4,4), np.linspace(-4, 4))
 
 plt.figure(1)
 
@@ -81,7 +97,8 @@ plt.figure(1)
 test = np.c_[xx1.ravel(), yy1.ravel()]
 Z1 = np.zeros((test.shape[0],1))
 for i in range(test.shape[0]):
-	point = scaler.transform(test[i,:])
+	#point = scaler.transform(test[i,:])
+	point = test[i,:]
 	Z1[i] = ahqp.predict(point)
 
 # clf.fit(X1)
@@ -90,15 +107,37 @@ Z1 = Z1.reshape(xx1.shape)
 
 plt.figure(1)  # two clusters
 
-plt.contour(
-    xx1, yy1, Z1, levels=[0], linewidths=5, colors='r')
+# plt.contour(
+#     xx1, yy1, Z1, levels=[0], linewidths=5, colors='g')
 
+
+
+kde = KernelDensity(bandwidth=1, kernel='gaussian')
+kde.fit(data)
+
+# evaluate only on the land: -9999 indicates ocean
+
+Z = np.exp(kde.score_samples(np.c_[xx1.ravel(), yy1.ravel()]))
+Z = Z.reshape(xx1.shape)
+
+# plot contours of the density
+levels = np.linspace(0, Z.max(), 25)
+plt.contourf(xx1, yy1, Z, levels=levels, cmap=plt.cm.Blues)
 
 
 # Plot the results (= shape of the data points cloud)
-for i in range(DIM):
-	if(ahqp.predict(data_fit[i,:]) == -1):
-		plt.scatter(data[i, 0], data[i, 1], color='green',s=10)
+for i in range(data.shape[0]):
+	if((data[i,1]>1.75 and data[i,1] < 2.25 and data[i,0] >1.75 and data[i,0]<2.25)):
+		labels[i] = -1.0
+	if((data[i,1]<-1.75 and data[i,1] > -2.25 and data[i,0] >1.75 and data[i,0]<2.25)):
+		labels[i] = -1.0
+
+
+
+for i in range(NUM_SAMPLES):
+	#if(labels[i] == -1):
+	if(labels[i] == -1):
+		plt.scatter(data[i, 0], data[i, 1], color='red',s=10)
 	else:
 		plt.scatter(data[i,0],data[i,1],color = 'black',s=10)
 

@@ -130,7 +130,7 @@ class RaceGame:
 
         for d_car in self.dummy_cars:
             if self.graphics:
-                d_car.Update(self.Track,self.screen)
+                d_car.Update(self.Track)
                 d_car.Draw((self.red.xc-self.car.xs),(self.red.yc-self.car.ys),self.screen)
             else:
                 d_car.Update(self.Track)
@@ -253,7 +253,7 @@ class RaceGame:
             return original_angle
 
 
-    def driving_agent(self, step_size=1, num_basic_steps=9, num_search_steps=7):
+    def driving_agent(self, step_size=1, num_basic_steps=9, num_search_steps=3):
         """
         Determines whether to steer left or right
         based on local trajectory simulation.
