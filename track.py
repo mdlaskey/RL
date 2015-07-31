@@ -81,17 +81,17 @@ class Track():
       """
       def is_overlapped(car_list, current_car):
         for car in car_list:
-          if abs(car[0] - current_car[0]) < 50 and abs(car[1] - current_car[1]) < 50:
+          if abs(car[0] - current_car[0]) < 30 and abs(car[1] - current_car[1]) < 30:
             return True
         return False
       cars_per_track = num_cars/4
       car_list = []
       random.seed(10)
       for tr in self.track:
-        width = (tr.right-50)- (tr.left+50)
-        height = (tr.top+50) - (tr.bottom-50)
-        widthInt = width/10
-        heightInt = height/10
+        width = tr.right-50- tr.left+50
+        height = tr.top+50 - tr.bottom-50
+        widthInt = width/5
+        heightInt = height/3
         heightPos = range(tr.bottom-50,tr.top+50,heightInt)
         widthPos = range(tr.left+50,tr.right-50,widthInt)
 

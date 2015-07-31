@@ -84,7 +84,7 @@ class RaceGame:
             print "Loading graphics"
             self.red.Load('car_images',360,self.Track.returnStart())
             car.Static_Sprite.initialize_images(self.red.NF, self.red.path)
-            self.car_list = self.Track.genCars(25)
+            self.car_list = self.Track.genCars(30)
             for car_p in self.car_list:
                 d_car = dummy_car.Sprite()
                 d_car.Load('car_images',360,car_p[0],car_p[1])
