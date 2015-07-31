@@ -74,23 +74,38 @@ class Track():
         return y_c 
 
     def genCars(self,num_cars):
+      """
+      Randomly generates dummy cars and their
+      corresponding positions. Ensures that
+      none of them overlap.
+      """
+      def is_overlapped(car_list, current_car):
+        for car in car_list:
+          if abs(car[0] - current_car[0]) < 50 and abs(car[1] - current_car[1]) < 50:
+            return True
+        return False
       cars_per_track = num_cars/4
       car_list = []
       random.seed(10)
       for tr in self.track:
-        width = tr.right-50 - tr.left+50
-        height = tr.top+50 - tr.bottom-50
-        widthInt = width/5
-        heightInt = height/3
+        width = (tr.right-50)- (tr.left+50)
+        height = (tr.top+50) - (tr.bottom-50)
+        widthInt = width/10
+        heightInt = height/10
         heightPos = range(tr.bottom-50,tr.top+50,heightInt)
         widthPos = range(tr.left+50,tr.right-50,widthInt)
 
         for i in range(cars_per_track):
-          
-          hP = random.randint(0,len(heightPos)-1)
-          wP = random.randint(0,len(widthPos)-1)
-          car = [heightPos[hP],widthPos[wP]]
-          car_list.append(car)
+          generating_car = True
+          while generating_car:
+            hP = random.randint(0,len(heightPos)-1)
+            wP = random.randint(0,len(widthPos)-1)
+            car = [heightPos[hP],widthPos[wP]]
+            if is_overlapped(car_list, car):
+              continue
+            else:
+              generating_car = False
+              car_list.append(car)
 
       return car_list 
 
@@ -208,9 +223,12 @@ class Track():
       #if(angle == None):
         #IPython.embed()
       #print rec,angle
+      if angle == None:
+        index = self.closest_rectangle_to_car(x=x, y=y)
+        angle = ANGLES[index]
       return angle
 
-    def closest_rectangle_to_car(self, car):
+    def closest_rectangle_to_car(self, car=None, x=None, y=None):
       """
       Returns the index of the closest rectangle to the car
       """
