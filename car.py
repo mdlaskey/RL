@@ -8,8 +8,8 @@ from numpy import linalg as LA
 
 xs = 600
 ys = 450
-xt = xs - 100
-yt = ys + 100
+xt = xs
+yt = ys
 dt = 1.0
 font = pygame.font.Font(None,24)
 msg = []
@@ -61,13 +61,14 @@ class Static_Sprite():
         input_car.car_pos = [x,y]
         input_car.screen = screen
 
-        screen.blit(Static_Sprite.images[view],(x-32,y-32))
+        # screen.blit(Static_Sprite.images[view],(x-32,y-32))
+        screen.blit(Static_Sprite.images[view],(x,y))
         indicated = int(10.0*input_car.speed)
         if input_car.lap > MAX_LAPS :
             elapsed_time = font.render(str(frames/24),1,(250,250,250))
 
 class Sprite():
-    def Load(self,path,NF,start, car_length=70, car_width=50):
+    def Load(self,path,NF,start, car_length=50, car_width=25):
         self.view = 270
         self.NF = NF
         self.start = start 
@@ -89,7 +90,6 @@ class Sprite():
         self.path = path
         self.car_length = car_length
         self.car_width = car_width
-
 
     def Draw(self,x,y,screen):
         Static_Sprite.draw_car(self, x, y, screen, frames, MAX_LAPS)
@@ -118,8 +118,6 @@ class Sprite():
 
         dist_f = LA.norm(front-rot_d_car)
         dist_b = LA.norm(back-rot_d_car)
-
-
 
         if(dist_f > dist_b):
             return [theta,rot_d_car,perp]
@@ -170,7 +168,7 @@ class Sprite():
             d = np.zeros(2)
             dist = LA.norm(d_car.cords -self.cords)
             theta,vec,perp = self.getRotate(d_car.cords)
-          
+
             if(dist < DIST_THRESH and theta > 0):
                 d[0] = dist 
                 d[1] = theta 
@@ -192,19 +190,44 @@ class Sprite():
 
         return state
 
-    def updateStats(self,track,dummycars):
-        for d_car in dummycars:
-            d = np.zeros(2)
-            #dist = LA.norm(d_car.cords -self.cords)
-            car_bounds = pygame.Rect(d_car.cords[0],d_car.cords[1], self.car_length, self.car_width)
-            #if(dist < 45 and d_car.id != self.pastId):
+    def collision_rectangle(self):
+        if self.view == 0 or self.view == 180 or self.view == 360:
+            return pygame.Rect(self.cords[0], self.cords[1], self.car_width, self.car_length)
+        elif self.view == 90 or self.view == 270:
+            return pygame.Rect(self.cords[0], self.cords[1], self.car_length, self.car_width)
 
-            if (car_bounds.collidepoint(self.cords[0],self.cords[1]) and d_car.id != self.pastId):
-                self.carsHit += 1
-                self.pastId = d_car.id
-        
+    def collision_points(self):
+        # Convert to radians
+        theta = self.view / 57.296
+        points = []
+        signs = [[1,1],[1,-1],[-1,1],[-1,-1]]
+        for s1, s2 in signs:
+            tempX = self.car_width / 2 * s1
+            tempY = self.car_length / 2 * s2
+            rotatedX = tempX*math.cos(theta) - tempY*math.sin(theta) + self.xc
+            rotatedY = tempX*math.sin(theta) + tempY*math.cos(theta) + self.yc
+            points.append(np.array([rotatedX, rotatedY]))
+        return points
+
+    def updateStats(self,track,dummycars):
+        if self.view % 90 == 0:
+            car_bounds = self.collision_rectangle()
+            for d_car in dummycars:
+                dummy_car_bounds = d_car.collision_rectangle()
+                if car_bounds.colliderect(dummy_car_bounds) and d_car.id != self.pastId:
+                    self.carsHit += 1
+                    self.pastId = d_car.id
+        else:
+            car_points = self.collision_points()
+            for d_car in dummycars:
+                dummy_car_bounds = d_car.collision_rectangle()
+                for point in car_points:
+                    if dummy_car_bounds.collidepoint(point) and d_car.id != self.pastId:
+                        self.carsHit += 1
+                        self.pastId = d_car.id
+
         if(not track.IsOnTrack(self)):
-            self.timeOffTrack +=1 
+            self.timeOffTrack +=1
 
 
     def Update(self):

@@ -223,9 +223,9 @@ class Track():
       #if(angle == None):
         #IPython.embed()
       #print rec,angle
-      if angle == None:
-        index = self.closest_rectangle_to_car(x=x, y=y)
-        angle = ANGLES[index]
+      # if angle == None:
+      #   index = self.closest_rectangle_to_car(x=x, y=y)
+      #   angle = ANGLES[index]
       return angle
 
     def closest_rectangle_to_car(self, car=None, x=None, y=None):

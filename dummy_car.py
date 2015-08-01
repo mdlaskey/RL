@@ -7,8 +7,8 @@ import numpy as np
 
 xs = 600
 ys = 450
-xt = xs - 100
-yt = ys + 100
+xt = xs #- 100
+yt = ys #+ 100
 dt = 1.0
 
 speedo = []
@@ -60,7 +60,7 @@ class Sprite():
     def return_dir(self,track,screen=None):
         return track.currentRectangle(self.xc,self.yc)
 
-    def Load(self,path,NF,xs,ys):
+    def Load(self,path,NF,xs,ys, car_length=50, car_width=25):
         self.view = 270
         self.NF = NF
 #       self.xc = 1690
@@ -81,6 +81,8 @@ class Sprite():
         self.lap = 0
         self.cords = np.array([self.xf,self.yf])
         self.path = path
+        self.car_length = car_length
+        self.car_width = car_width
 
 
     def Draw(self,s_c,s_y,screen):
@@ -89,6 +91,11 @@ class Sprite():
     def Update(self,track,screen=None):
         
         theta = self.return_dir(track,screen)
+        if theta == None:
+            print "Dummy car fallen off track"
+            theta = self.theta
+        else:
+            self.theta = theta
 
         if self.wobble :
             idle_sound.set_volume(1.)
@@ -109,3 +116,10 @@ class Sprite():
 
     def Shift_Up(self):
         i=0
+
+    def collision_rectangle(self):
+        assert self.view % 90 == 0
+        if self.view == 0 or self.view == 180:
+            return pygame.Rect(self.cords[0], self.cords[1], self.car_width, self.car_length)
+        else:
+            return pygame.Rect(self.cords[0], self.cords[1], self.car_length, self.car_width)

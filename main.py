@@ -13,7 +13,7 @@ import copy
 
 if __name__ == '__main__':
     results = []
-    laps = 3
+    laps = 2
     race_game = RaceGame(agent = Dagger(),graphics=True, MAX_LAPS=laps)
     while race_game.running:
         race_game.control_car(input_sequence=None, driving_agent=True)

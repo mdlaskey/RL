@@ -75,6 +75,8 @@ class RaceGame:
         self.timeHit = []
         self.dummy_cars = []
 
+        self.past_action = 0
+
         if input_red:
             self.red = input_red
         if input_dummy_cars:
@@ -222,7 +224,7 @@ class RaceGame:
             pygame.display.flip()
             self.agent.integrateObservation(self.state,a)
 
-        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > 10:
+        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > self.MAX_LAPS:
             if self.initial_training:
 
                 self.agent.newModel()
@@ -256,6 +258,7 @@ class RaceGame:
             input_sequence = self.driving_agent(step_size=step_size)
             print "action", input_sequence[0], input_sequence
             for action in input_sequence[0:step_size]:
+                self.past_action = action
                 self.run_frame()
                 self.control_car_step(action)
             # print ("self.red.xc", "self.red.yc"), (self.red.xc, self.red.yc)
@@ -291,7 +294,9 @@ class RaceGame:
         Heuristic: Going straight > one turn, then go straight >
         local search trajectory
 
-        Returns first trajectory if no crash-free solution is found.
+        If no crash-free solution is found, prioritizes turning
+        if about to run off the track, otherwise returns last
+        crash-free solution.
 
         step_size: Number of steps to use in basic trajectory.
         num_basic_steps: Number of no-action steps to extend basic trajectory with.
@@ -303,19 +308,27 @@ class RaceGame:
         possible_actions = ['right', 'left', 'neutral']
         new_angles = [self.calculate_new_angle(self.red.view, possible_actions[i]) for i in range(3)]
         deviations = [min(abs(desired_angle + 360 - new_angles[i]), abs(desired_angle - new_angles[i])) for i in range(3)]
-        actions_sorted = sorted(range(3), key=lambda x: deviations[x])
+        basic_actions_sorted = sorted(range(3), key=lambda x: deviations[x])
 
-        # Calculates and simulates possible trajectories
-        basic_trajectories = [[i] + ([2] * num_basic_steps) for i in actions_sorted]
+        # Basic Trajectories
+        basic_trajectories = [[i] + ([2] * num_basic_steps) for i in basic_actions_sorted]
         for input_sequence in basic_trajectories:
             if self.simulate_steps(input_sequence) == 0:
                 return input_sequence
+
+        # Search
         for i in range(2, num_search_steps + 1):
-            trajectories = [list(j[::-1]) + ([2] * (num_search_steps - i)) for j in itertools.product(actions_sorted, repeat=i)]
+            trajectories = [list(j[::-1]) + ([2] * (num_search_steps - i)) for j in itertools.product(basic_actions_sorted, repeat=i)]
             for input_sequence in trajectories:
-                if self.simulate_steps(list(input_sequence[::-1])) == 0:
-                    return input_sequence
-        return [actions_sorted[0]]
+                if self.simulate_steps(list(input_sequence)) == 0:
+                    return [min(input_sequence)] + input_sequence
+
+        #print "Hit"
+        # Crash
+        if basic_actions_sorted[0] != 2:
+            return [basic_actions_sorted[0]]
+        else:
+            return [self.past_action]
 
     def simulate_steps(self, input_sequence):
         """
@@ -327,6 +340,7 @@ class RaceGame:
         simulated_game = RaceGame(graphics=False, input_red=copy.deepcopy(self.red), input_dummy_cars=copy.deepcopy(self.dummy_cars))
         simulated_game.red.timesHit = 0
         simulated_game.red.carsHit = 0
+        simulated_game.red.pastId = 0
 
         simulated_game.control_car(input_sequence=input_sequence, driving_agent=False)
 
