@@ -65,6 +65,7 @@ class Dagger():
 
 
     def updateModel(self):
+
         States = np.array(self.States)
         Actions = np.array(self.Actions)
         self.learner.trainModel(States,Actions)

@@ -22,14 +22,15 @@ from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 
 class RaceGame:
-    def __init__(self,agent = None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15, initial_training=True):
+    def __init__(self,agent = None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15, initial_training=True,seed=1):
+
         self.graphics = graphics
         self.turn_angle = turn_angle
         self.agent = agent
         self.initial_training = initial_training
         self.cost = []
         self.queries = []
-
+        track.Track.seed = seed
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
@@ -84,7 +85,7 @@ class RaceGame:
             print "Loading graphics"
             self.red.Load('car_images',360,self.Track.returnStart())
             car.Static_Sprite.initialize_images(self.red.NF, self.red.path)
-            self.car_list = self.Track.genCars(6*5)
+            self.car_list = self.Track.genCars(3*5)
             for car_p in self.car_list:
                 self.d_car = dummy_car.Sprite()
                 self.d_car.Load('car_images',360,car_p[0],car_p[1])
@@ -202,8 +203,8 @@ class RaceGame:
             pygame.display.flip()
             self.agent.integrateObservation(self.state,a)
 
-        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > 10:
-            if self.intial_training:
+        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > 5:
+            if self.initial_training:
 
                 self.agent.newModel()
                 self.initial_training = False
@@ -231,11 +232,15 @@ class RaceGame:
             for action in input_sequence:
                 self.run_frame()
                 self.control_car_step(action)
-        elif driving_agent and self.initial_training:
+        elif driving_agent:
             input_sequence = self.driving_agent(step_size=step_size)
+            print "action", input_sequence[0], input_sequence
             for action in input_sequence[0:step_size]:
                 self.run_frame()
                 self.control_car_step(action)
+            # print ("self.red.xc", "self.red.yc"), (self.red.xc, self.red.yc)
+            # print "self.red.view", self.red.view
+            # print "desiredRectangle", self.Track.desired_rectangle_angle(self.red)
         else:
             self.run_frame()
             self.control_car_step()
@@ -253,7 +258,7 @@ class RaceGame:
             return original_angle
 
 
-    def driving_agent(self, step_size=1, num_basic_steps=9, num_search_steps=3):
+    def driving_agent(self, step_size=1, num_basic_steps=7, num_search_steps=5):
         """
         Determines whether to steer left or right
         based on local trajectory simulation.
@@ -271,19 +276,24 @@ class RaceGame:
         """
 
         # Determines order of actions to try based on deviation from 90 degree multiples
+        desired_angle = self.Track.desired_rectangle_angle(self.red)
         possible_actions = ['right', 'left', 'neutral']
         new_angles = [self.calculate_new_angle(self.red.view, possible_actions[i]) for i in range(3)]
-        deviations = [min(new_angles[i] % 90, abs((new_angles[i] % 90) - 90)) for i in range(3)]
+        deviations = [min(abs(desired_angle + 360 - new_angles[i]), abs(desired_angle - new_angles[i])) for i in range(3)]
         actions_sorted = sorted(range(3), key=lambda x: deviations[x])
 
         # Calculates and simulates possible trajectories
-        basic_trajectories = [[i] + ([2] * num_basic_steps) for i in itertools.product(actions_sorted, repeat=step_size)]
-        trajectories = basic_trajectories + [i[::-1] for i in itertools.product([0,2,1], repeat=num_search_steps)]
-        for input_sequence in trajectories:
+        basic_trajectories = [[i] + ([2] * num_basic_steps) for i in actions_sorted]
+        for input_sequence in basic_trajectories:
             if self.simulate_steps(input_sequence) == 0:
                 return input_sequence
-        print "No solution found"
-        return trajectories[0]
+        for i in range(2, num_search_steps + 1):
+            trajectories = [list(j[::-1]) + ([2] * (num_search_steps - i)) for j in itertools.product(actions_sorted, repeat=i)]
+            for input_sequence in trajectories:
+                if self.simulate_steps(list(input_sequence[::-1])) == 0:
+                    return input_sequence
+        #print "No solution found", [actions_sorted[0]]
+        return [actions_sorted[0]]
 
     def simulate_steps(self, input_sequence):
         """

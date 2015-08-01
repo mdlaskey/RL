@@ -26,7 +26,7 @@ class AHQP():
 
 	nu_b = 0.9
 	
-	def __init__(self,sigma=0.4,nu=0.1):
+	def __init__(self,sigma=150,nu=0.1):
 		self.sigma = sigma
 		self.nu_g = nu
 
@@ -124,10 +124,12 @@ class AHQP():
 
 	def caculateRho(self):
 		mw = 0.0
+		maxSup = 0.0 
 		for i in range(self.data.shape[0]):
-			if(mw < self.weights[i] and self.weights[i]<0.9/(self.nu_g*self.m)):
+			if(mw < self.weights[i] and self.weights[i]<0.9/(self.nu_g*self.m) and self.labels[i] == 1.0):
 				mw = self.weights[i]
 				maxSup = i 
+		
 		
 		self.rho = np.sum(np.ravel(self.labels*self.weights.T) * self.G[:,maxSup])
 

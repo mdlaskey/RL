@@ -107,8 +107,8 @@ Z1 = Z1.reshape(xx1.shape)
 
 plt.figure(1)  # two clusters
 
-# plt.contour(
-#     xx1, yy1, Z1, levels=[0], linewidths=5, colors='g')
+plt.contour(
+    xx1, yy1, Z1, levels=[0], linewidths=5, colors='g')
 
 
 

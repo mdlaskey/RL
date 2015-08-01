@@ -29,7 +29,7 @@ class Learner():
 
 	verbose = True
 	option_1 = False
-	gamma = 1e-3
+	gamma = 1e-2
 	gamma_clf = 1e-3
 	first_time = True
 	iter_  = 1
@@ -45,9 +45,10 @@ class Learner():
 	TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_1000.caffemodel')
 
 	def __init__(self,sigma=1.0):
-		self.ahqp_solver = AHQP()
+		self.ahqp_solver_g = AHQP()
+		self.ahqp_solver_b = AHQP(sigma = 200,nu=0.001)
 
-	def Load(self,gamma = 1e-3, retrain_net=False):
+	def Load(self,gamma = 1e-2, retrain_net=False):
 		self.sup_states = pickle.load(open('states.p','rb'))
 		self.trainSupport()
 		if self.neural:
@@ -57,7 +58,7 @@ class Learner():
 		else:
 			self.Actions = pickle.load(open('actions.p','rb'))
 			self.Weights = np.zeros(self.Actions.shape)+1
-			self.gamma = gamma
+			
 			self.trainModel(self.States,self.Actions)
 
 
@@ -130,17 +131,31 @@ class Learner():
 		# Original SVC implementation
 		self.clf = svm.LinearSVC()
 		#self.clf.class_weight = 'auto' 
-		self.clf.C = 1e-2
+		print "GAMMA",self.gamma
+		self.clf.C = self.gamma
 		
 		self.clf.fit(States[:,:,0], Action)
 
 		if (self.verbose or self.use_AHQP):
 			self.debugPolicy(States[:,:,0], Action)
-
+		if (self.use_AHQP):
 			self.scaler = preprocessing.StandardScaler().fit(States[:,:,0])
 			States = self.scaler.transform(States[:,:,0])
-			self.ahqp_solver.assembleKernel(States, self.labels)
-			self.ahqp_solver.solveQP()
+			good_labels = self.labels == 1.0
+			bad_labels = self.labels == -1.0
+
+
+			States_g = States[good_labels,:]
+			labels = np.zeros(States_g.shape[0])+1.0
+			self.ahqp_solver_g.assembleKernel(States_g, labels)
+
+			States_b = States[bad_labels,:]
+			labels = np.zeros(States_b.shape[0])+1.0
+			self.ahqp_solver_b.assembleKernel(States_b,labels)
+
+
+			self.ahqp_solver_b.solveQP()
+			self.ahqp_solver_g.solveQP()
 
 			
 	def getScoreNovel(self,States):
@@ -211,7 +226,7 @@ class Learner():
 		self.novel = svm.OneClassSVM()
 
 
-		self.novel.gamma = 1e-3
+		self.novel.gamma = self.gamma.clf # Gamma
 		self.novel.nu = 1e-3
 		self.novel.kernel = 'rbf'
 		self.novel.verbose = True
@@ -276,7 +291,10 @@ class Learner():
 	def askForHelp(self,state):
 	
 		state = self.scaler.transform(state)
-		return self.ahqp_solver.predict(state)
+		if(self.ahqp_solver_b.predict(state) == 1.0):
+			return -1.0
+		else:
+			return self.ahqp_solver_g.predict(state)
 
 	def getNumData(self):
 		return self.Action.shape[0]
