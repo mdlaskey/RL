@@ -18,7 +18,7 @@ results = pickle.load(open('results_DAGGER.p','rb'))
 avg_cost = np.zeros(len(results[0][1]))
 avg_queries = np.zeros(len(results[0][1]))
 
-IPython.embed()
+
 
 for t in range(len(results[0][1])):
 	total_cost = 0.0
@@ -27,8 +27,21 @@ for t in range(len(results[0][1])):
 		total_queries += results[k][0][t] 
 		total_cost += results[k][1][t]
 	
-	avg_queries[t] = total_queries/float(len(results[0][1]))
-	avg_cost[t] = total_cost/float(len(results[0][1]))
+	avg_queries[t] = total_queries/float(len(results))
+	avg_cost[t] = total_cost/float(len(results))
+
+plt.ylabel('Number of Crashes')
+plt.xlabel('States Labeled')
+
+names = ['DAgger']
+plt.legend(names,loc='upper right')
+
+font = {'family' : 'normal',
+        'weight' : 'bold',
+        'size'   : 22}
+
+plt.rc('font', **font)
+
 
 plt.plot(avg_queries,avg_cost)
 plt.show()

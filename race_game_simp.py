@@ -13,7 +13,7 @@ pygame.init()
 import car
 import pickle
 import numpy as np
-import track
+import track_simp as track
 import time
 import matplotlib as plt
 import itertools
@@ -88,13 +88,14 @@ class RaceGame:
             self.red.Load('car_images',360,self.Track.returnStart())
             car.Static_Sprite.initialize_images(self.red.NF, self.red.path)
 
-            self.car_list = self.Track.genCars(2*5)
+            self.car_list = self.Track.genCars(25*5)
 
             for car_p in self.car_list:
                 d_car = dummy_car.Sprite()
                 d_car.Load('car_images',360,car_p[0],car_p[1])
                 self.dummy_cars.append(d_car)
                 dummy_car.Static_Sprite.initialize_images((self.dummy_cars[0]).path)
+               
 
             # coordinates = [(d_car.xc, d_car.yc) for d_car in self.dummy_cars]
             # print "original", len(coordinates), coordinates
@@ -159,6 +160,7 @@ class RaceGame:
                         self.dummy_cars[j].id += 1
                         updating = True
         dummy_car_ids = [d_car.id for d_car in self.dummy_cars]
+       
         assert len(set(dummy_car_ids)) == len(dummy_car_ids)
 
 
@@ -196,12 +198,13 @@ class RaceGame:
             self.red.timesHit += 1
             self.red.returnToTrack(self.Track)
 
-        if(self.iters>700 and not self.initial_training):
+        if(self.iters> 150 and not self.initial_training):
             self.cars_hit.append(self.red.carsHit)
             self.iterations += 1
             self.timeOffTrack.append(self.red.timeOffTrack)
             self.timeHit.append(self.red.timesHit)
-            self.cost.append(self.red.carsHit*10+self.red.timeOffTrack)
+            self.cost.append(self.agent.surr_lost)
+            self.agent.surr_lost = 0.0
             self.queries.append(self.agent.human_input)
             self.red.reset(self.dummy_cars)
             if(self.iterations > self.MAX_LAPS):
@@ -228,13 +231,14 @@ class RaceGame:
             pygame.display.flip()
             self.agent.integrateObservation(self.state,a)
 
-        if self.graphics and self.Track.getLap(self.red.xc,self.red.yc) > 5:
+        if self.graphics and self.Track.atTop(self.red.cords):
 
             if self.initial_training:
 
                 self.agent.newModel()
                 self.initial_training = False
                 self.agent.initialTraining = False
+                self.agent.surr_lost = 0.0
                 self.iters = 0
                 self.red.reset(self.dummy_cars)
 
@@ -328,13 +332,13 @@ class RaceGame:
                 if self.simulate_steps(list(input_sequence)) == 0:
                     return [min(input_sequence)] + input_sequence
 
-        #print "Hit"
+        print "Hit"
         # Crash
-        # return [basic_actions_sorted[0]]
-        if basic_actions_sorted[0] != 2:
-            return [basic_actions_sorted[0]]
-        else:
-            return [self.past_action]
+        return [basic_actions_sorted[0]]
+        # if basic_actions_sorted[0] != 2:
+        #     return [basic_actions_sorted[0]]
+        # else:
+        #     return [self.past_action]
 
     def simulate_steps(self, input_sequence):
         """

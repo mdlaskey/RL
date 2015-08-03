@@ -29,7 +29,7 @@ class Learner():
 
 	verbose = True
 	option_1 = False
-	gamma = 1e-2
+	gamma = 0.01
 	gamma_clf = 1e-3
 	first_time = True
 	iter_  = 1
@@ -133,14 +133,16 @@ class Learner():
 		#self.clf.class_weight = 'auto' 
 		print "GAMMA",self.gamma
 		self.clf.C = self.gamma
+	
+		# self.scaler = preprocessing.StandardScaler().fit(States[:,:,0])
+		# States = self.scaler.transform(States[:,:,0])
 		
 		self.clf.fit(States[:,:,0], Action)
 
 		if (self.verbose or self.use_AHQP):
 			self.debugPolicy(States[:,:,0], Action)
 		if (self.use_AHQP):
-			self.scaler = preprocessing.StandardScaler().fit(States[:,:,0])
-			States = self.scaler.transform(States[:,:,0])
+			
 			good_labels = self.labels == 1.0
 			bad_labels = self.labels == -1.0
 
@@ -270,22 +272,26 @@ class Learner():
 		else:
 
 			img = cv2.pyrDown((cv2.pyrDown(state)))
-			winSize = (32,32)
-			blockSize = (16,16)
-			blockStride = (8,8)
-			cellSize = (8,8)
-			nbins = 9
-			derivAperture = 1
-			winSigma = 4.
-			histogramNormType = 0
-			L2HysThreshold = 2.0000000000000001e-01
-			gammaCorrection = 0
-			nlevels = 64
-			hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
-			                histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
 
-			state = hog.compute(img)
+			img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+			state = np.reshape(img,(img.shape[0]*img.shape[1],1))
+			# winSize = (32,32)
+			# blockSize = (16,16)
+			# blockStride = (8,8)
+			# cellSize = (8,8)
+			# nbins = 9
+			# derivAperture = 1
+			# winSigma = 4.
+			# histogramNormType = 0
+			# L2HysThreshold = 2.0000000000000001e-01
+			# gammaCorrection = 0
+			# nlevels = 64
+			# hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
+			#                 histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
 
+			# state = hog.compute(img)
+			
+			# state = self.scaler.transform(state.T)
 			return self.clf.predict(state.T)
 
 	def askForHelp(self,state):

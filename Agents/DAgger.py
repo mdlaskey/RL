@@ -21,6 +21,7 @@ class Dagger():
         self.learner = Learner()
         self.learner.use_AHQP = False
         self.human_input = 0.0
+        self.surr_lost = 0.0
 
     def getName(self):
         return 'Dagger'
@@ -43,22 +44,30 @@ class Dagger():
         """This method stores the observation inside the agent"""
         if(not self.initialTraining):
             self.human_input += 1.0
-        if (self.initialTraining or (self.actionTaken[0] != action[0])):
+        #or (self.actionTaken[0] != action[0])):
+        if(self.initialTraining or self.actionTaken[0] != action[0]):
+            self.surr_lost += 1.0
             img = cv2.pyrDown((cv2.pyrDown(img)))
-            winSize = (32,32)
-            blockSize = (16,16)
-            blockStride = (8,8)
-            cellSize = (8,8)
-            nbins = 9
-            derivAperture = 1
-            winSigma = 4.
-            histogramNormType = 0
-            L2HysThreshold = 2.0000000000000001e-01
-            gammaCorrection = 0
-            nlevels = 64
-            hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
-                            histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
-            state = hog.compute(img)
+            
+            img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+            state = np.reshape(img,(img.shape[0]*img.shape[1],1))
+
+
+
+            # winSize = (32,32)
+            # blockSize = (16,16)
+            # blockStride = (8,8)
+            # cellSize = (8,8)
+            # nbins = 9
+            # derivAperture = 1
+            # winSigma = 4.
+            # histogramNormType = 0
+            # L2HysThreshold = 2.0000000000000001e-01
+            # gammaCorrection = 0
+            # nlevels = 64
+            # hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
+            #                 histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
+            # state = hog.compute(img)
             self.States.append(state)
             self.Actions.append(action)  
             #self.printLevelScene()

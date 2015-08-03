@@ -13,11 +13,11 @@ yt = ys #+ 100
 dt = 1.0
 BLACK = (0,0,0)
 BLUE = (  0,   0, 255)
-TRACK_WIDTH = 200
+TRACK_WIDTH = 300
 
-TRACK_LENGTH = 1250
+TRACK_LENGTH = 2050
 
-START = 250
+START = 100
 ANGLES = [0,math.pi/2,math.pi,3*math.pi/2]  
 
 
@@ -43,11 +43,11 @@ class Track():
        r3 = pygame.Rect(r3_x,r3_y,TRACK_LENGTH,TRACK_WIDTH)
 
        r4_x = START
-       r4_y = START
+       r4_y = START-100
 
        r4 = pygame.Rect(r4_x,r4_y,TRACK_WIDTH,TRACK_LENGTH)
 
-       self.track = [r1,r2,r3,r4]
+       self.track = [r4]
 
        center = TRACK_LENGTH+TRACK_WIDTH+300
        self.mid_cords = np.array([float(center)/2.0,float(center)/2.0])
@@ -59,7 +59,25 @@ class Track():
        self.inbox = False 
 
     def returnStart(self):
-      return self.track[2].center
+     
+      pos = self.track[0].midbottom
+      width = self.track[0].right-50- self.track[0].left+50
+     
+      widthInt = width/3
+
+      widthPos = range(self.track[0].left+50,self.track[0].right-50,widthInt)
+      pos= (pos[1],pos[1] - 100)
+
+
+
+
+      return pos
+    def atTop(self,cords):
+      top = self.track[0].midtop[1]
+      if(cords[1]<top + 100):
+        return True
+      else: 
+        return False
 
     def center_rec(self,x,y,rect,rec_num):
       y_c = y-rect.centery
@@ -90,10 +108,10 @@ class Track():
       random.seed(self.seed)
       for tr in self.track:
         width = tr.right-50- tr.left+50
-        height = tr.top+50 - tr.bottom-50
-        widthInt = width/5
-        heightInt = height/3
-        heightPos = range(tr.bottom-50,tr.top+50,heightInt)
+        height = tr.top+50 - tr.bottom-150
+        widthInt = width/3
+        heightInt = height/20
+        heightPos = range(tr.bottom-150,tr.top+50,heightInt)
         widthPos = range(tr.left+50,tr.right-50,widthInt)
 
         for i in range(cars_per_track):
@@ -101,12 +119,13 @@ class Track():
           while generating_car:
             hP = random.randint(0,len(heightPos)-1)
             wP = random.randint(0,len(widthPos)-1)
-            car = [heightPos[hP],widthPos[wP]]
+            car = [widthPos[wP],heightPos[hP]]
             if is_overlapped(car_list, car):
               continue
             else:
               generating_car = False
               car_list.append(car)
+ 
 
       return car_list 
 
@@ -183,20 +202,16 @@ class Track():
 
     def closestRectangle(self,pos):
       dist = 1e6
-      for i in range(4):
-        tr = self.track[i]
+      for tr in self.track:
+       
         cent = np.array([tr.centerx,tr.centery])
         if(dist > LA.norm(pos-cent)):
           dist = LA.norm(pos-cent)
-          idx = i
           closest = tr
 
-      if(idx == 1 or idx == 3):
-        pos[0] = closest.centerx
-      else:
-        pos[1] = closest.centery
+      pos[0] = closest.centerx
 
-      return ANGLES[idx],pos
+      return ANGLES[3],pos
 
 
     def currentRectangle(self,x,y):
@@ -204,22 +219,7 @@ class Track():
       rec = 0
       first = False
       dist_cent = 0
-      for tr in self.track:
-        if(tr.collidepoint(x,y)):
-          if(not first):
-            dist_cent = self.center_rec(x,y,tr,rec)
-          
-            first = True
-            angle = ANGLES[rec]
-          elif(first):
-            if(self.center_rec(x,y,tr,rec) >= dist_cent or self.center_rec(x,y,tr,rec) >= 90):
-              angle = ANGLES[rec]
-            
-            dist_cent = self.center_rec(x,y,tr,rec)
-        rec+=1
-      if(self.track[0].collidepoint(x,y) and self.track[3].collidepoint(x,y)):
-        if( self.center_rec(x,y,tr,rec) >= 90 or self.center_rec(x,y,self.track[0],0) >= dist_cent):
-          angle = ANGLES[0]
+      
 
       #if(angle == None):
         #IPython.embed()
@@ -227,23 +227,14 @@ class Track():
       # if angle == None:
       #   index = self.closest_rectangle_to_car(x=x, y=y)
       #   angle = ANGLES[index]
-      return angle
+      return 3*math.pi/2
 
     def closest_rectangle_to_car(self, car=None, x=None, y=None):
       """
       Returns the index of the closest rectangle to the car
       """
-      dist = 1e6
-      pos = np.array([car.xc, car.yc])
-      for i in range(4):
-        tr = self.track[i]
-        cent = np.array([tr.centerx,tr.centery])
-        if dist > LA.norm(pos-cent):
-          dist = LA.norm(pos-cent)
-          index = i
-          closest = tr
-
-      return index
+      
+      return 0
 
     def desired_rectangle_angle(self, car):
       """
@@ -266,7 +257,7 @@ class Track():
         else:
           current_rectangles = max(current_rectangles)
       # print "current_rectangles", current_rectangles
-      return ((current_rectangles + 1) % 4) * 90
+      return 0.0
 
     def IsOnTrack(self,car):
       T = False 
