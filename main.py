@@ -15,6 +15,7 @@ if __name__ == '__main__':
 
     gammas = [1e-2]
     results = []
+
     names = [] 
     for seed in range(1):
         race_game = RaceGame(agent = Dagger(),graphics=True, MAX_LAPS=5,seed=seed)
@@ -31,5 +32,3 @@ if __name__ == '__main__':
     plt.show()
     plt.savefig("results_DAgger_auto.eps")
    
-
-IPython.embed()

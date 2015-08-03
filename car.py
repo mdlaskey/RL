@@ -210,12 +210,21 @@ class Sprite():
         return points
 
     def updateStats(self,track,dummycars):
+        colliding_cars = self.get_colliding_cars(track, dummycars)
+        self.carsHit += len(colliding_cars)
+
+        if(not track.IsOnTrack(self)):
+            self.timeOffTrack +=1
+
+
+    def get_colliding_cars(self, track, dummycars):
+        colliding_cars = []
         if self.view % 90 == 0:
             car_bounds = self.collision_rectangle()
             for d_car in dummycars:
                 dummy_car_bounds = d_car.collision_rectangle()
                 if car_bounds.colliderect(dummy_car_bounds) and d_car.id != self.pastId:
-                    self.carsHit += 1
+                    colliding_cars.append(d_car)
                     self.pastId = d_car.id
         else:
             car_points = self.collision_points()
@@ -223,12 +232,9 @@ class Sprite():
                 dummy_car_bounds = d_car.collision_rectangle()
                 for point in car_points:
                     if dummy_car_bounds.collidepoint(point) and d_car.id != self.pastId:
-                        self.carsHit += 1
+                        colliding_cars.append(d_car)
                         self.pastId = d_car.id
-
-        if(not track.IsOnTrack(self)):
-            self.timeOffTrack +=1
-
+        return colliding_cars
 
     def Update(self):
         self.speed = .95*self.speed + .05*(2.5*self.gear)
@@ -253,5 +259,16 @@ class Sprite():
         self.yc = int(self.yf)
         
         sound.set_volume(0)
+
+    def get_new_pos(self, new_view):
+        speed = .95*self.speed + .05*(2.5*self.gear)
+        theta = new_view/57.296
+        vx = speed*math.sin(theta)
+        vy = speed*math.cos(theta)
+        xf = self.xf + vx*dt
+        yf = self.yf + vy*dt
+        cords = [xf, yf]
+        return np.array(cords)
+
     def Shift_Up(self):
         i=0

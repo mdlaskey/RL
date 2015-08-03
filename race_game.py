@@ -21,6 +21,8 @@ import itertools
 from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 
+from numpy import linalg as LA
+
 class RaceGame:
     def __init__(self,agent = None, MAX_LAPS=100, graphics=False, input_red=None, input_dummy_cars=None, turn_angle=15, initial_training=True,seed=1):
 
@@ -314,6 +316,13 @@ class RaceGame:
         new_angles = [self.calculate_new_angle(self.red.view, possible_actions[i]) for i in range(3)]
         deviations = [min(abs(desired_angle + 360 - new_angles[i]), abs(desired_angle - new_angles[i])) for i in range(3)]
         basic_actions_sorted = sorted(range(3), key=lambda x: deviations[x])
+        actions_sorted = basic_actions_sorted[:]
+
+        # Favors turning toward center of track
+        if basic_actions_sorted[0] == 2:
+            new_positions = [self.red.get_new_pos(i) for i in new_angles[0:2]]
+            new_distances = [self.Track.distance_from_current_rectangle(self.red, new_positions[i]) for i in range(2)]
+            basic_actions_sorted[1:3] = sorted(range(2), key=lambda x: -new_distances[x])
 
         # Basic Trajectories
         basic_trajectories = [[i] + ([2] * num_basic_steps) for i in basic_actions_sorted]
@@ -323,18 +332,18 @@ class RaceGame:
 
         # Search
         for i in range(2, num_search_steps + 1):
-            trajectories = [list(j[::-1]) + ([2] * (num_search_steps - i)) for j in itertools.product(basic_actions_sorted, repeat=i)]
+            trajectories = [list(j[::-1]) + ([2] * (num_search_steps - i)) for j in itertools.product(actions_sorted, repeat=i)]
             for input_sequence in trajectories:
                 if self.simulate_steps(list(input_sequence)) == 0:
                     return [min(input_sequence)] + input_sequence
 
+        #new_positions = [self.red.get_new_pos(i) for i in new_angles[0:3]]
+
         #print "Hit"
         # Crash
-        # return [basic_actions_sorted[0]]
-        if basic_actions_sorted[0] != 2:
-            return [basic_actions_sorted[0]]
-        else:
-            return [self.past_action]
+
+        return [basic_actions_sorted[0]]
+
 
     def simulate_steps(self, input_sequence):
         """
@@ -351,3 +360,10 @@ class RaceGame:
         simulated_game.control_car(input_sequence=input_sequence, driving_agent=False)
 
         return simulated_game.red.timesHit + simulated_game.red.carsHit
+
+    def find_closest_cars(self):
+        """
+        Returns a list of the closest dummy cars to the current car.
+        """
+        closest_cars = sorted(self.dummy_cars, key = lambda x: LA.norm(x.cords - self.red.cords))
+        return closest_cars

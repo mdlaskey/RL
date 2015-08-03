@@ -334,11 +334,11 @@ class RaceGame:
 
         print "Hit"
         # Crash
-        return [basic_actions_sorted[0]]
-        # if basic_actions_sorted[0] != 2:
-        #     return [basic_actions_sorted[0]]
-        # else:
-        #     return [self.past_action]
+        #return [basic_actions_sorted[0]]
+        if basic_actions_sorted[0] != 2:
+            return [basic_actions_sorted[0]]
+        else:
+            return [self.past_action]
 
     def simulate_steps(self, input_sequence):
         """

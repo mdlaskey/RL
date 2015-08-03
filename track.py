@@ -247,8 +247,22 @@ class Track():
 
     def desired_rectangle_angle(self, car):
       """
-      Returns the current angle that the car should be facing,
-      based on the current location.
+      Returns the desired rectangle angle based on the
+      car's current location.
+      """
+      desired_rectangle_index = self.desired_rectangle(car)
+      return ((desired_rectangle_index + 1) % 4) * 90
+
+    def distance_from_current_rectangle(self, car, pos):
+      desired_rectangle_index = self.desired_rectangle(car)
+      tr = self.track[desired_rectangle_index]
+      cent = np.array([tr.centerx,tr.centery])
+      dist = LA.norm(pos-cent)
+      return dist
+
+    def desired_rectangle(self, car):
+      """
+      Returns the rectangle that the car is currently on.
       """
       current_rectangles = []
       for i in range(len(self.track)):
@@ -266,7 +280,7 @@ class Track():
         else:
           current_rectangles = max(current_rectangles)
       # print "current_rectangles", current_rectangles
-      return ((current_rectangles + 1) % 4) * 90
+      return current_rectangles
 
     def IsOnTrack(self,car):
       T = False 
