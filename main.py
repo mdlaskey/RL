@@ -13,8 +13,9 @@ import copy
 
 if __name__ == '__main__':
     results = []
-    laps = 2
+    laps = 10
     race_game = RaceGame(agent = Dagger(),graphics=True, MAX_LAPS=laps)
+    race_game.run_frame()
     while race_game.running:
         race_game.control_car(input_sequence=None, driving_agent=True)
     values = [copy.deepcopy(race_game.queries),copy.deepcopy(race_game.cost)]
