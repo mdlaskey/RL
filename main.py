@@ -1,4 +1,4 @@
-from race_game_simp import RaceGame
+from race_game import RaceGame
 from Agents.DAgger import Dagger
 #from Agents.SHEATH import SHEATH
 import pygame

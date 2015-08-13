@@ -1,0 +1,17 @@
+(lp1
+(lp2
+(lp3
+F700
+aF1401
+aF2102
+aF2803
+aF3504
+aF4205
+aa(lp4
+I30
+aI34
+aI38
+aI29
+aI24
+aI41
+aaa.
