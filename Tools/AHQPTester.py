@@ -42,17 +42,17 @@ def test_sparse_implementations(ahqp, data, labels):
 
 	print a, b, c
 
-DIM = 2
-NUM_SAMPLES = 1000
+DIM = 22
+NUM_SAMPLES = 3000
 
 
 
 # data = pickle.load(open('states.p','rb'))
 
 #Sample from a GMM 
-mean_1 = np.zeros(DIM)+np.array([-2,2])
-mean_2 = np.zeros(DIM)+np.array([2,-2])
-mean_3 = np.zeros(DIM)+np.array([2,2])
+mean_1 = np.zeros(DIM)
+mean_2 = np.zeros(DIM)
+mean_3 = np.zeros(DIM)
 
 cov = np.eye(DIM)*0.1
 cov_p = np.eye(DIM)
@@ -86,7 +86,7 @@ ahqp.assembleKernel(data,labels)
 
 weights = ahqp.solveQP()
 
-
+IPython.embed()
 # Learn a frontier for outlier detection with several classifiers
 #xx1, yy1 = np.meshgrid(np.linspace(1400,0, 50), np.linspace(1400, 0, 50))
 xx1, yy1 = np.meshgrid(np.linspace(-4,4), np.linspace(-4, 4))

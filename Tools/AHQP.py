@@ -26,7 +26,7 @@ class AHQP():
 
 	nu_b = 0.9
 	
-	def __init__(self,sigma=150,nu=0.1):
+	def __init__(self,sigma=200,nu=0.1):
 		self.sigma = sigma
 		self.nu_g = nu
 

@@ -268,15 +268,15 @@ class Track():
       return T
 
     def Draw(self,screen,car_pos):
-  		
+      
       for tr in self.track:
-  			#IPython.embed()
+        #IPython.embed()
         tl = tr.topleft
         tl_t = [tl[0] - car_pos[0],tl[1]-car_pos[1]]
-  			
+        
 
         tri = tr.bottomright
-  			
+        
         width = abs(tl[0] - tri[0])
         height = abs(tl[1] - tri[1])
         dim = [width,height]

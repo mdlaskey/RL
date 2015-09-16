@@ -10,7 +10,7 @@ xs = 600
 ys = 450
 xt = xs
 yt = ys
-dt = 1.0
+dt = 0.75
 font = pygame.font.Font(None,24)
 msg = []
 msg += ["STOP"]
@@ -68,8 +68,9 @@ class Static_Sprite():
             elapsed_time = font.render(str(frames/24),1,(250,250,250))
 
 class Sprite():
-    def Load(self,path,NF,start, car_length=50, car_width=25):
-        self.view = 270
+    def Load(self,path,NF,start,view, car_length=50, car_width=25):
+        
+        self.view = int(57.29*view)
         self.NF = NF
         self.start = start 
         self.start_v = self.view 
@@ -127,26 +128,23 @@ class Sprite():
     def sort_func(self,d):
         return d[0]
 
-    def reset(self,dummycars):
-        self.xf = self.start[0]
-        self.yf = self.start[1]
+    def reset(self):
+        # self.xf = self.start[0]
+        # self.yf = self.start[1]
 
-        self.view = self.start_v
-        for d in dummycars:
-            d.xf = d.startXf
-            d.yf = d.startYf
+        # self.view = self.start_v
 
         self.carsHit = 0
         self.timesHit = 0
         self.timeOffTrack = 0
 
     def returnToTrack(self,track):
-        view,pos = track.closestRectangle(self.cords)
+        view,pos = track.closestRectangle(self)
 
         self.xf = pos[0]
         self.yf = pos[1]
 
-        self.view = int(57.296*view+90)
+        self.view = int(57.296*view)
 
     def isCrashed(self,track):
         mid_cords = track.mid_cords

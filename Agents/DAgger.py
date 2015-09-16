@@ -49,25 +49,25 @@ class Dagger():
             self.surr_lost += 1.0
             img = cv2.pyrDown((cv2.pyrDown(img)))
             
-            img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-            state = np.reshape(img,(img.shape[0]*img.shape[1],1))
+            # img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+            # state = np.reshape(img,(img.shape[0]*img.shape[1],1))
+           
 
 
-
-            # winSize = (32,32)
-            # blockSize = (16,16)
-            # blockStride = (8,8)
-            # cellSize = (8,8)
-            # nbins = 9
-            # derivAperture = 1
-            # winSigma = 4.
-            # histogramNormType = 0
-            # L2HysThreshold = 2.0000000000000001e-01
-            # gammaCorrection = 0
-            # nlevels = 64
-            # hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
-            #                 histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
-            # state = hog.compute(img)
+            winSize = (32,32)
+            blockSize = (16,16)
+            blockStride = (8,8)
+            cellSize = (8,8)
+            nbins = 9
+            derivAperture = 1
+            winSigma = 4.
+            histogramNormType = 0
+            L2HysThreshold = 2.0000000000000001e-01
+            gammaCorrection = 0
+            nlevels = 64
+            hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
+                            histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
+            state = hog.compute(img)
             self.States.append(state)
             self.Actions.append(action)  
             #self.printLevelScene()

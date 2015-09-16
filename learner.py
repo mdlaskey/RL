@@ -11,6 +11,7 @@ from sklearn import metrics
 from scipy.sparse import csr_matrix
 from scipy.sparse import vstack
 from Tools.AHQP import AHQP
+from sklearn.neighbors.kde import KernelDensity
 
 import sys
 
@@ -31,11 +32,14 @@ class Learner():
 	option_1 = False
 	gamma = 0.01
 	gamma_clf = 1e-3
+	no_bad = False
 	first_time = True
 	iter_  = 1
+	committe = []
 	use_AHQP = True 
 	# Neural net implementation
 	neural = False
+
 
 	# Assumes current directory is "RL/"
 	NET_SUBDIR = os.getcwd() + '/net/'
@@ -45,7 +49,7 @@ class Learner():
 	TRAINED_MODEL = os.path.join(os.getcwd(), '_iter_1000.caffemodel')
 
 	def __init__(self,sigma=1.0):
-		self.ahqp_solver_g = AHQP()
+		self.ahqp_solver_g = AHQP(sigma = sigma)
 		self.ahqp_solver_b = AHQP(sigma = 200,nu=0.001)
 
 	def Load(self,gamma = 1e-2, retrain_net=False):
@@ -134,15 +138,21 @@ class Learner():
 		print "GAMMA",self.gamma
 		self.clf.C = self.gamma
 	
-		# self.scaler = preprocessing.StandardScaler().fit(States[:,:,0])
-		# States = self.scaler.transform(States[:,:,0])
+		
 		
 		self.clf.fit(States[:,:,0], Action)
+		self.trainCommitte(States[:,:,0],Action)
+
+		self.scaler_s = preprocessing.StandardScaler().fit(States[:,:,0])
+		states = self.scaler_s.transform(States[:,:,0])
+		self.trainKDE(states)
+
 
 		if (self.verbose or self.use_AHQP):
 			self.debugPolicy(States[:,:,0], Action)
 		if (self.use_AHQP):
-			
+			self.scaler = preprocessing.StandardScaler().fit(States[:,:,0])
+			States = self.scaler.transform(States[:,:,0])
 			good_labels = self.labels == 1.0
 			bad_labels = self.labels == -1.0
 
@@ -153,10 +163,13 @@ class Learner():
 
 			States_b = States[bad_labels,:]
 			labels = np.zeros(States_b.shape[0])+1.0
-			self.ahqp_solver_b.assembleKernel(States_b,labels)
-
-
-			self.ahqp_solver_b.solveQP()
+			if(States_b.shape[0] == 0):
+				self.no_bad = True 
+			else:
+				self.no_bad = False 
+				self.ahqp_solver_b.assembleKernel(States_b,labels)
+				self.ahqp_solver_b.solveQP()
+			
 			self.ahqp_solver_g.solveQP()
 
 			
@@ -240,6 +253,51 @@ class Learner():
 
 		self.saveModel()
 
+	def trainKDE(self,States):
+		self.kde = KernelDensity(kernel = 'gaussian',bandwidth = 200)
+		self.kde.fit(States)
+		
+
+	def getKDEHelp(self,state):
+		state = self.scaler_s.transform(state)
+		score = self.kde.score_samples(state)
+		
+		print score
+		THRESH = -163166.5
+		if(score[0] < THRESH): 
+			return -1.0
+		else: 
+			return 1.0
+
+
+	def trainCommitte(self,States,Actions):
+		SUBSET = 0.8 
+
+		# rand1_idx = np.random.randint(0,States.shape[0]-1,int(States.shape[0]*0.8))
+		# rand2_idx = np.random.randint(0,States.shape[0]-1,int(States.shape[0]*0.8))
+		# rand3_idx = np.random.randint(0,States.shape[0]-1,int(States.shape[0]*0.8))
+		# idx = [rand1_idx,rand2_idx,rand3_idx]
+	
+		# for i in range(3):
+		# 	policy = svm.LinearSVC()
+		# 	policy.fit(States[idx[i],:],Actions[idx[i]])
+		# 	self.committe.append(policy)
+
+	def getQuery(self,state):
+		# hypoth = []
+		# for q in self.committe:
+		# 	hypoth.append(q.predict(state))
+
+		# if(hypoth[0] == hypoth[1] == hypoth[2]):
+		# 	return 1.0 
+		# else:
+		return -1.0 
+
+	def getUncertainity(self,state):
+		if(np.min(np.abs(self.clf.decision_function(state))) > 0.1):
+			return 1.0 
+		else: 
+			return -1.0 
 
  	def getAction(self, state):
 		"""
@@ -273,31 +331,30 @@ class Learner():
 
 			img = cv2.pyrDown((cv2.pyrDown(state)))
 
-			img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-			state = np.reshape(img,(img.shape[0]*img.shape[1],1))
-			# winSize = (32,32)
-			# blockSize = (16,16)
-			# blockStride = (8,8)
-			# cellSize = (8,8)
-			# nbins = 9
-			# derivAperture = 1
-			# winSigma = 4.
-			# histogramNormType = 0
-			# L2HysThreshold = 2.0000000000000001e-01
-			# gammaCorrection = 0
-			# nlevels = 64
-			# hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
-			#                 histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
+			# img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+			# state = np.reshape(img,(img.shape[0]*img.shape[1],1))
+			winSize = (32,32)
+			blockSize = (16,16)
+			blockStride = (8,8)
+			cellSize = (8,8)
+			nbins = 9
+			derivAperture = 1
+			winSigma = 4.
+			histogramNormType = 0
+			L2HysThreshold = 2.0000000000000001e-01
+			gammaCorrection = 0
+			nlevels = 64
+			hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins,derivAperture,winSigma,
+			                histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
 
-			# state = hog.compute(img)
+			state = hog.compute(img)
 			
-			# state = self.scaler.transform(state.T)
 			return self.clf.predict(state.T)
 
 	def askForHelp(self,state):
 	
 		state = self.scaler.transform(state)
-		if(self.ahqp_solver_b.predict(state) == 1.0):
+		if(not self.no_bad and self.ahqp_solver_b.predict(state) == 1.0):
 			return -1.0
 		else:
 			return self.ahqp_solver_g.predict(state)
