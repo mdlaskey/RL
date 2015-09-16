@@ -140,7 +140,7 @@ class RaceGame:
             self.screen.blit(self.visible_track,(self.car.xs-self.red.xc,self.car.ys-self.red.yc))
             self.Track.Draw(self.screen,(self.red.xc-self.car.xs,self.red.yc-self.car.ys))
             self.red.Draw(car.xs,car.ys,self.screen)
-            self.state = pygame.surfarray.array3d(self.screen)
+
 
         self.red.updateStats(self.Track,self.dummy_cars)
 
@@ -150,6 +150,9 @@ class RaceGame:
                 d_car.Draw((self.red.xc-self.car.xs),(self.red.yc-self.car.ys),self.screen)
             else:
                 d_car.Update(self.Track)
+
+        if self.graphics:
+            self.state = pygame.surfarray.array3d(self.screen)
 
     def update_dummy_ids(self):
         updating = True
@@ -341,8 +344,10 @@ class RaceGame:
 
         #print "Hit"
         # Crash
-
-        return [basic_actions_sorted[0]]
+        if basic_actions_sorted[0] != 2:
+            return [basic_actions_sorted[0]]
+        else:
+            return [self.past_action]
 
 
     def simulate_steps(self, input_sequence):

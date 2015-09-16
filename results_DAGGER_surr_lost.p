@@ -8,6 +8,7 @@ aF2803
 aF3504
 aF4205
 aa(lp4
+<<<<<<< HEAD
 I9
 aI11
 aI9
@@ -149,4 +150,12 @@ aI3
 aI8
 aI3
 aI2
+=======
+I30
+aI34
+aI38
+aI29
+aI24
+aI41
+>>>>>>> 71cdad3f749f2c2a304817a80cba574555059aaf
 aaa.
