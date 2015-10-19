@@ -18,6 +18,7 @@ import time
 import matplotlib as plt
 import itertools
 
+from Classes.Supervisor import Supervisor 
 from Agents.DAgger import Dagger
 from Agents.Soteria import Soteria
 

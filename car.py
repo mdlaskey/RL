@@ -24,6 +24,8 @@ GREEN = (  0,   255, 0)
 
 DIST_THRESH = 200 
 
+OFFSET = np.array([2100,1100])
+
 n = len(msg)
 gears = []
 for i in range(n):
@@ -51,12 +53,12 @@ class Static_Sprite():
             Static_Sprite.images += [pygame.image.load(name+str(f)+'.png')]
 
     @staticmethod
-    def draw_car(input_car, x, y, screen, frames, MAX_LAPS):
+    def draw_car(input_car, x, y, screen, frames):
         view = input_car.view + int(random.gauss(0,input_car.wobble))
 
         if view < 0 :
             view = view + 360
-        view = (view+270)%360
+        view = (view)%360
 
         input_car.car_pos = [x,y]
         input_car.screen = screen
@@ -64,8 +66,7 @@ class Static_Sprite():
         # screen.blit(Static_Sprite.images[view],(x-32,y-32))
         screen.blit(Static_Sprite.images[view],(x,y))
         indicated = int(10.0*input_car.speed)
-        if input_car.lap > MAX_LAPS :
-            elapsed_time = font.render(str(frames/24),1,(250,250,250))
+        
 
 class Sprite():
     def Load(self,path,NF,start,view, car_length=50, car_width=25):
@@ -74,8 +75,8 @@ class Sprite():
         self.NF = NF
         self.start = start 
         self.start_v = self.view 
-        self.xc = start[0]
-        self.yc = start[1]
+        self.xc = start[0]+OFFSET[0]
+        self.yc = start[1]+OFFSET[1]
         self.xf = float(self.xc)
         self.yf = float(self.yc)
         self.speed = 0
@@ -93,7 +94,7 @@ class Sprite():
         self.car_width = car_width
 
     def Draw(self,x,y,screen):
-        Static_Sprite.draw_car(self, x, y, screen, frames, MAX_LAPS)
+        Static_Sprite.draw_car(self, x, y, screen, frames)
 
     def getRotate(self,d_cords):
         #convert to radians 
@@ -234,7 +235,7 @@ class Sprite():
                         self.pastId = d_car.id
         return colliding_cars
 
-    def Update(self):
+    def Update(self,state = None):
         self.speed = .95*self.speed + .05*(2.5*self.gear)
         #print self.gear,'\t',int(10.0*self.speed),'\t',self.lap
         
@@ -245,10 +246,17 @@ class Sprite():
         else :
             idle_sound.set_volume(0)
 
-        vx = self.speed*math.sin(theta)
-        vy = -self.speed*math.cos(theta)
-        self.xf = self.xf + vx*dt
-        self.yf = self.yf + vy*dt
+        if(state != None): 
+            self.xf = state[0]+OFFSET[0]
+            self.yf = state[1]+OFFSET[1]
+            self.view = int(state[2]*(180/math.pi))
+
+        else:
+            vx = self.speed*math.sin(theta)
+            vy = -self.speed*math.cos(theta)
+            self.xf = self.xf + vx*dt
+            self.yf = self.yf + vy*dt
+
         self.pre_cords = self.cords 
         self.cords[0] = self.xf
         self.cords[1] = self.yf

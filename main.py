@@ -1,6 +1,4 @@
-
-from race_game_comp import RaceGame
-
+from race_game_asst import RaceGame
 from Agents.DAgger import Dagger
 from Agents.SHEATH import SHEATH
 import pygame
@@ -30,15 +28,12 @@ if __name__ == '__main__':
         sup_incr = np.zeros(ROUNDS)
         unc_incr = np.zeros(ROUNDS)
         qur_incr = np.zeros(ROUNDS)
-        race_game = RaceGame(agent = SHEATH(sigma = 150),graphics=True, MAX_LAPS=1,seed=seed)
+        race_game = RaceGame()
         while race_game.running:
-            race_game.control_car(input_sequence=None, driving_agent=True)
-        # sup_incr[seed] = race_game.sup_incr[0]
-        # unc_incr[seed] = race_game.unc_incr[0]
-        # qur_incr[seed] = race_game.qur_incr[0]
-        unc_incr[seed] = race_game.unc_incr[0]
+            race_game.control_car()
+    
 
-        values = [race_game.queries,race_game.cost]#,race_game.sup_incr[0],race_game.unc_incr[0]]
+        values = [race_game.queries,race_game.cost]
         results.append(values)
         names.append(str(seed))
         plt.plot(values[0],values[1])
