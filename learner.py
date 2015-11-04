@@ -71,52 +71,7 @@ class Learner():
 		self.Actions = pickle.load(open('actions.p','rb'))
 		self.Weights = np.zeros(self.Actions.shape)+1
 
-	def split_training_test(self, States, Action):
-		"""
-		Splits the states/action pairs into
-		training/test sets of 80/20 percent.
-		"""
-		total_size = len(States)
-		train_size = int(total_size * 0.8)
-
-		train_indices = random.sample([i for i in range(total_size)], train_size)
-		test_indices = [i for i in range(total_size) if i not in train_indices]
-
-		train_states = np.array([np.array(States[i]).astype(np.float32) for i in train_indices])
-		train_actions = np.array([Action[i] for i in train_indices]).astype(np.float32)
-		test_states = np.array([np.array(States[i]).astype(np.float32) for i in test_indices])
-		test_actions = np.array([Action[i] for i in test_indices]).astype(np.float32)
-
-		return train_states, train_actions, test_states, test_actions
-
-	def output_images(self, States, Action):
-		"""
-		Downsamples the states twice.
-		Outputs the given states/actions into
-		image files for neural net training in Caffe.
-		"""
-		downsampled_states = [cv2.pyrDown((cv2.pyrDown(img))) for img in States]
-
-		train_states, train_actions, test_states, test_actions = \
-			self.split_training_test(downsampled_states, Action)
-
-		self.sup_states = train_states
-
-		# train/test.txt should be a list of image files / actions to be read
-		with open(os.path.join(self.NET_SUBDIR, 'train.txt'), 'w') as f:
-			for i in range(len(train_states)):
-				train_filename = self.NET_SUBDIR + 'train_images/' + 'train_img_{0}.png'.format(i)
-				cv2.imwrite(train_filename, train_states[i])
-				f.write(train_filename + " " + str(int(train_actions[i])) + '\n')
-
-		with open(os.path.join(self.NET_SUBDIR, 'test.txt'), 'w') as f:
-			for i in range(len(test_states)):
-				test_filename = self.NET_SUBDIR + 'test_images/' + 'test_img_{0}.png'.format(i)
-				cv2.imwrite(test_filename, test_states[i])
-				f.write(test_filename + " " + str(int(test_actions[i])) + '\n')
-
-
-
+	
 	def trainModel(self, States=None, Action=None, fineTune = False, retrain_net=False):
 		"""
 		Trains model on given states and actions.
@@ -270,34 +225,7 @@ class Learner():
 			return 1.0
 
 
-	def trainCommitte(self,States,Actions):
-		SUBSET = 0.8 
-
-		# rand1_idx = np.random.randint(0,States.shape[0]-1,int(States.shape[0]*0.8))
-		# rand2_idx = np.random.randint(0,States.shape[0]-1,int(States.shape[0]*0.8))
-		# rand3_idx = np.random.randint(0,States.shape[0]-1,int(States.shape[0]*0.8))
-		# idx = [rand1_idx,rand2_idx,rand3_idx]
 	
-		# for i in range(3):
-		# 	policy = svm.LinearSVC()
-		# 	policy.fit(States[idx[i],:],Actions[idx[i]])
-		# 	self.committe.append(policy)
-
-	def getQuery(self,state):
-		# hypoth = []
-		# for q in self.committe:
-		# 	hypoth.append(q.predict(state))
-
-		# if(hypoth[0] == hypoth[1] == hypoth[2]):
-		# 	return 1.0 
-		# else:
-		return -1.0 
-
-	def getUncertainity(self,state):
-		if(np.min(np.abs(self.clf.decision_function(state))) > 0.1):
-			return 1.0 
-		else: 
-			return -1.0 
 
  	def getAction(self, state):
 		"""

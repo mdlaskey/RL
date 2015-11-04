@@ -101,6 +101,9 @@ class Supervisor():
 		return np.dot(self.Ks[int(self.T-t-3)],(state-self.ref_x[:,t]))+self.ref_u[:,t]
 		#return np.dot(self.Ks[t],(state-self.ref_x[:,t]))+self.ref_u[:,t]
 
+	def getCost(self,state,t): 
+
+		return la.norm(state - self.ref_x[:,t])
 
 	def testController(self):
 		out_states = np.zeros(self.ref_x.shape)
