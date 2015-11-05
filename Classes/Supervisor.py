@@ -21,7 +21,8 @@ class Supervisor():
 		self.TOpt = OptimizeTraj()
 		self.car = Vehicle()
 		self.lqr = LQR()
-		#[ref_x,ref_u] = self.genElipse()
+		[ref_x,ref_u] = self.genElipse()
+		self.elip = ref_x
 		#[self.ref_x,self.ref_u] = self.TOpt.trajOpt(ref_x,ref_u) 
 		[self.ref_x,self.ref_u] = self.TOpt.loadTraj()
 		#self.testTraj()
@@ -51,17 +52,18 @@ class Supervisor():
 		return self.ref_x[:,t]
 		
 	def genElipse(self):
-		a = 900
-		b = 600
-		ref_states = np.zeros([4,self.T])
-		ref_controls = np.zeros([2,self.T-1])
-
+		a = 925
+		b = 550
+		T = 50
+		ref_states = np.zeros([4,T])
+		ref_controls = np.zeros([2,T-1])
+		
 		#Set velocity to angle/T 
-		ref_states[3,:] = 1.12*math.pi*np.sqrt(a**2+b**2)/self.T
+		ref_states[3,:] = 1.12*math.pi*np.sqrt(a**2+b**2)/float(T)
 
-
-		for i in range(int(self.T)):
-			frac = i/self.T 
+		
+		for i in range(T):
+			frac = i/float(T) 
 			ref_states[0,i] = a*np.cos(frac*2*math.pi)
 			ref_states[1,i] = b*np.sin(frac*2*math.pi)
 
@@ -72,7 +74,7 @@ class Supervisor():
 
 			ref_states[2,i] = np.arccos(cos_a)
 
-		for i in range(0,int(self.T-1)):
+		for i in range(0,int(T-1)):
 			ref_controls[1,i] = np.abs(ref_states[2,i] - ref_states[2,i-1])
 
 		return ref_states,ref_controls
@@ -96,14 +98,28 @@ class Supervisor():
 
 		return A_mats,B_mats
 
+	def listPointsRef(self): 
+		points = []
+
+		for i in range(int(self.T)):
+			point = (self.elip[0,i],self.elip[1,i])
+			points.append(point)
+
+		return points
+
 	def getControl(self,state,t):
 		
 		return np.dot(self.Ks[int(self.T-t-3)],(state-self.ref_x[:,t]))+self.ref_u[:,t]
 		#return np.dot(self.Ks[t],(state-self.ref_x[:,t]))+self.ref_u[:,t]
 
-	def getCost(self,state,t): 
-
-		return la.norm(state - self.ref_x[:,t])
+	def getCost(self,state): 
+		mn_val = np.inf
+		for i in range(self.elip.shape[1]):
+			val = la.norm(self.elip[0:2,i]- state[0:2])
+			if(val < mn_val):
+				mn_val = val
+		return mn_val
+		
 
 	def testController(self):
 		out_states = np.zeros(self.ref_x.shape)

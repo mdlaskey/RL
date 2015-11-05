@@ -28,6 +28,7 @@ from scipy.stats import norm
 
 from numpy import linalg as LA
 
+OFFSET = np.array([2100,1125])
 class RaceGame:
     def __init__(self,samples = 10,human = True):
 
@@ -83,7 +84,7 @@ class RaceGame:
         self.xt = 100
         self.yt = 20
 
-        self.BLUE = (  0,   0, 255)
+        self.BLUE = (  0,   255, 127)
 
 
    
@@ -115,7 +116,9 @@ class RaceGame:
 
         self.clock.tick(24)
         self.screen.fill((0,0,0))
+
         self.screen.blit(self.visible_track,(self.car.xs-self.red.xc,self.car.ys-self.red.yc))
+        self.drawGoal(self.screen,(self.red.xc-self.car.xs),(self.red.yc-self.car.ys))
         self.Track.Draw(self.screen,(self.red.xc-self.car.xs,self.red.yc-self.car.ys))
         self.red.Draw(car.xs,car.ys,self.screen)
         self.str_wheel.drawSteering(self.screen,self.car.xs,self.car.ys)
@@ -123,6 +126,14 @@ class RaceGame:
         pygame.display.flip()
 
 
+    def drawGoal(self,screen,x,y):
+        points = self.supervisor.listPointsRef()
+
+        for i in range(len(points)): 
+            p = points[i]
+            points[i] = (p[0]-x+OFFSET[0],p[1]-y+OFFSET[1])
+            
+        pygame.draw.polygon(screen, self.BLUE, points, 3)
 
     def control_car(self):
         """
@@ -162,10 +173,8 @@ class RaceGame:
         elif(key[K_s]):
             control[0] = -1.0
        
-    
-
-
         self.car_state = self.supervisor.car.dynamics(self.car_state,control)
+        print "COST ",self.supervisor.getCost(self.car_state)
 
 
 
