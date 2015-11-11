@@ -15,7 +15,7 @@ import copy
 if __name__ == '__main__':
 
     gammas = [1e-2]
-    ROUNDS = 10
+    ROUNDS = 3
     rc = RobotCont()
     sigma_results = []
    
@@ -23,34 +23,34 @@ if __name__ == '__main__':
     # for sigma in sigmas:
     results = []
 
-    oil_cost = []
-    oil_states = []
-    oil_prob = []
-    oil_controls = []
+    cost = []
+    states = []
+    controls = []
 
     for seed in range(ROUNDS):
 
         incorr = [] 
         names = [] 
-       
-        race_game = RaceGame()
-        while race_game.running:
-            race_game.control_car()
-        
+        for i in range(5):
+            if(seed == 0):
+                race_game = RaceGame()
+            else: 
+                race_game = RaceGame(roboCoach = rc)
+            while race_game.running:
+                race_game.control_car()
+            
+            #IPython.embed()
+            cost.append(race_game.cost)
+            states.append(race_game.states)
+           
+            controls.append(race_game.controls)
 
-        oil_cost.append(race_game.cost_oil)
-        oil_states.append(race_game.states_oil)
-        oil_prob.append(race_game.probs_oil)
-        oil_controls.append(race_game.controls_oil)
-
+        rc.calQ(cost,states,controls)
 
         # plt.plot(race_game.cost)
         # plt.show()
         # sigma_results.append(results)
     
-
-    rc.calQ(oil_cost,oil_states,oil_controls)
-    grad = rc.calGrad(oil_states,oil_controls,oil_prob)
 
     pickle.dump(results,open('results_expert.p','wb'))
     IPython.embed()

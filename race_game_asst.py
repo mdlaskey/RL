@@ -19,6 +19,7 @@ import matplotlib as plt
 import itertools
 
 from Classes.SteeringWheel import SteeringWheel
+from Classes.OilDynamics import OilDynamics
 
 from Classes.Supervisor import Supervisor 
 from Agents.DAgger import Dagger
@@ -29,18 +30,22 @@ from scipy.stats import norm
 from numpy import linalg as LA
 
 OFFSET = np.array([2100,1125])
+T = 1e10
 class RaceGame:
-    def __init__(self,samples = 10,human = True):
+    def __init__(self,samples = 10,human = True, roboCoach = None):
 
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
         self.screen_size = (400,400)
+        self.roboCoach = roboCoach
         self.cost = []
         self.i = 0
         self.human = True
         offset = np.array([350,300])
+        self.grad = np.zeros(2)
         self.str_wheel = SteeringWheel(offset)
+
         #self.screen_size = (2000,1040)
       
         
@@ -52,16 +57,17 @@ class RaceGame:
         self.trk = self.track_f.get_at((0,0))
 
         
-        self.cost_oil = np.zeros(6)
-        self.controls_oil = np.zeros([6,2])
-        self.states_oil = np.zeros([6,4])
-        self.probs_oil = np.zeros(6)
+        self.cost = np.zeros(T)
+        self.controls = np.zeros([T,2])
+        self.states = np.zeros([T,4])
+        
 
 
         self.car = car
         self.supervisor = Supervisor()
-        self.t = 0
 
+        self.t = 0
+        self.oil = OilDynamics(self.supervisor.car.dynamics)
         theta, pos, self.car_state = self.supervisor.getInitialState()
 
         self.car_state[3] = 5.0
@@ -109,19 +115,23 @@ class RaceGame:
         self.frames += 1
         self.car.frames = self.frames
 
-        
-
         self.red.Update(self.car_state)
-        print self.car_state
+        print "ITERS", self.iters
+
+
+        if(self.iters > T-2): 
+            self.running = False
 
         self.clock.tick(24)
         self.screen.fill((0,0,0))
 
         self.screen.blit(self.visible_track,(self.car.xs-self.red.xc,self.car.ys-self.red.yc))
-        self.drawGoal(self.screen,(self.red.xc-self.car.xs),(self.red.yc-self.car.ys))
+        #self.drawGoal(self.screen,(self.red.xc-self.car.xs),(self.red.yc-self.car.ys))
         self.Track.Draw(self.screen,(self.red.xc-self.car.xs,self.red.yc-self.car.ys))
         self.red.Draw(car.xs,car.ys,self.screen)
         self.str_wheel.drawSteering(self.screen,self.car.xs,self.car.ys)
+        if(self.roboCoach != None):
+            self.str_wheel.drawCorrections(self.screen,self.car.xs,self.car.ys,self.grad)
         self.state = pygame.surfarray.array3d(self.screen)
         pygame.display.flip()
 
@@ -142,18 +152,12 @@ class RaceGame:
         """  
         self.run_frame()
 
-
-
         if(self.human):
             self.get_control()
         else: 
             self.control_car_step()
    
 
-    def oil_dynamics(self,control):
-        control[1] = control[1]-0.08
-        control[0] = control[0]+1e-1
-        return control
 
     def probs(self,std,x): 
         return np.exp((-x**2/(2*std**2))/(std*np.sqrt(2*math.pi)))
@@ -173,8 +177,23 @@ class RaceGame:
         elif(key[K_s]):
             control[0] = -1.0
        
+
+        self.controls[self.iters,:] = control
+        self.states[self.iters,:] = self.car_state
+
+        if(self.roboCoach != None): 
+            self.grad = self.roboCoach.calGrad(self.car_state,control)
+            print "GRAD ", self.grad
+            Q = self.roboCoach.evalQ(self.car_state,control)
+            print "Q VALUE, ", Q
+
+
         self.car_state = self.supervisor.car.dynamics(self.car_state,control)
-        print "COST ",self.supervisor.getCost(self.car_state)
+        self.car_state = self.oil.dynamics(self.car_state)
+
+        self.cost[self.iters] =  self.supervisor.getCost(self.car_state)
+
+        print "STATE", self.car_state
 
 
 

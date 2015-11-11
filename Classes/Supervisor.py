@@ -54,7 +54,8 @@ class Supervisor():
 	def genElipse(self):
 		a = 925
 		b = 550
-		T = 50
+		T = 2000
+		self.elipT = T
 		ref_states = np.zeros([4,T])
 		ref_controls = np.zeros([2,T-1])
 		
@@ -101,7 +102,7 @@ class Supervisor():
 	def listPointsRef(self): 
 		points = []
 
-		for i in range(int(self.T)):
+		for i in range(self.elipT):
 			point = (self.elip[0,i],self.elip[1,i])
 			points.append(point)
 
