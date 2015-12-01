@@ -9,13 +9,12 @@ import pdb
 import learner
 import copy
 
-pygame.init()
+#pygame.init()
 import car
 import pickle
 import numpy as np
 import track_elipse as track
 import time
-import matplotlib as plt
 import itertools
 
 from Classes.Supervisor import Supervisor 
@@ -40,6 +39,13 @@ class SteeringWheel:
 		self.prev_st_ang = 0.0
 		self.contained = False
 		self.pre_gc = np.zeros(2)
+		self.start = False
+
+		name = "SteeringImages/down_arrow.png"
+		self.up_arrow = pygame.image.load(name)
+
+		name = "SteeringImages/up_arrow.png"
+		self.down_arrow = pygame.image.load(name)
 
 
 	def getSteeringAngle(self): 
@@ -51,13 +57,19 @@ class SteeringWheel:
 		
 			pos_np = np.array([pos[0],pos[1]])
 			if(self.checkContains(pos)):
+				self.start = True
 				vec = pos_np - self.center
 				vec = vec/LA.norm(vec)
 				self.prev_st_ang = self.st_ang
 				self.st_ang = np.arctan2(vec[1],vec[0])
 				#self.st_ang = (self.st_ang+math.pi)
+		print "STEERING ANGLE ", self.st_ang - self.prev_st_ang
+		if(np.abs(self.st_ang - self.prev_st_ang)> 0.2):
+			angle = np.sign(self.st_ang - self.prev_st_ang)*0.2
+		else: 
+			angle = self.st_ang - self.prev_st_ang
 
-		return self.st_ang - self.prev_st_ang
+		return angle
 
 
 	def checkContains(self,pos):
@@ -92,15 +104,26 @@ class SteeringWheel:
 
 		pointls = (self.cent,cor,self.end)
 
-		pygame.draw.polygon(surface,GREEN,pointls)
+		#pygame.draw.polygon(surface,GREEN,pointls)
 
 		#Draw Speed Correction 
 
-		
+		a_cent = (self.cent[0] - 90, self.cent[1])
 
+		if(g_c[0] > 5): 
+			surface.blit(self.up_arrow,a_cent)
+		elif(g_c[0] < -5): 
+			surface.blit(self.down_arrow,a_cent)
 
+	def optimalCor(self,surface,x,y,signal):
+		#Draw Speed Correction 
 
-		
+		a_cent = (self.cent[0] - 90, self.cent[1])
+
+		if(signal > 0.5): 
+			surface.blit(self.up_arrow,a_cent)
+		elif(signal < -0.5): 
+			surface.blit(self.down_arrow,a_cent)
 
 	def drawSteering(self,surface,x,y): 
 
@@ -122,6 +145,7 @@ class SteeringWheel:
 
 		pygame.draw.line(surface,RED,self.cent,self.end)
 
+		
 
 
 

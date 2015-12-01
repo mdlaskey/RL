@@ -4,11 +4,12 @@ import numdifftools as nd
 import math
 import IPython
 from Classes.vehicle import Vehicle 
+from Classes.NeuralNet import NeuralNet
 from Tools.lqr import LQR 
 from sklearn import linear_model
 from Tools.MotionPlanning.car_model import OptimizeTraj
 from sklearn.kernel_ridge import KernelRidge
-import matplotlib.pyplot as plt
+
 """
 Continous dynamics car, contains cost function for elipse track
 """
@@ -18,11 +19,14 @@ class RobotCont():
 	dt = 1
 	gamma = 0.05
 
+	def __init__(self):
+		self.Q = NeuralNet()
+
 
 
 	def calQ(self,Costs,States,Controls):
 
-		Q = []
+		Qvals = []
 		X_U = []
 		for i in range(len(Costs)):
 			costs = Costs[i]
@@ -34,21 +38,28 @@ class RobotCont():
 				exp_r = 0.0
 				for i in range(t,states.shape[0]):
 					exp_r += costs[i]*self.gamma**(i-t)
-				Q.append(exp_r)
-				x_u = np.zeros(8)
+				Qvals.append(exp_r)
+				x_u = np.zeros(6)
 				x_u[0:4] = states[t]
 				x_u[4:6] = controls[t]
 				X_U.append(x_u)
 
+		X_U = np.asarray(X_U)
+		print "XU SHAPE ", X_U.shape
+		Qvals = np.asarray(Qvals)
+		Qvals.shape += (1,)
 		
-		self.Q = KernelRidge(alpha = 0.01, kernel = 'poly',degree = 2)
+		self.Q = KernelRidge(alpha=1.0,kernel = 'poly')
+
+		self.Q.fit(X_U,Qvals)
+
+	
 		
-		self.Q.fit(X_U,Q)
 
 	def evalQ(self,state,control): 
-		x_u = np.zeros(8)
-		x_u[0:4] = state
-		x_u[4:6] = control 
+		x_u = np.zeros([1,6])
+		x_u[:,0:4] = state
+		x_u[:,4:6] = control 
 
 
 		return self.Q.predict(x_u)
@@ -75,9 +86,9 @@ class RobotCont():
 		print "STATE",state
 		print "CONTROl", control
 		func = lambda u: self.evalQ(state,u)
-		grad = nd.Gradient(func,step = 5e-1)
+		grad = nd.Gradient(func,step = 0.5)
 		#grad = self.finit_dif(func,control)
 		
-		return 1e5*grad(control)[0]
+		return grad(control)[0,0,:]
 
 

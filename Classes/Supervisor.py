@@ -5,7 +5,7 @@ import IPython
 from Classes.vehicle import Vehicle 
 from Tools.lqr import LQR 
 from Tools.MotionPlanning.car_model import OptimizeTraj
-import matplotlib.pyplot as plt
+
 """
 Continous dynamics car, contains cost function for elipse track
 """

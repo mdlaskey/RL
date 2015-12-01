@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     gammas = [1e-2]
     ROUNDS = 3
-    rc = RobotCont()
+    rc = pickle.load(open('/Users/michaelluskey/Documents/RL/LFD/AMT_Experiment/RoboCont.p'))
     sigma_results = []
    
     sigmas = [300,250,150, 50,1]
@@ -32,10 +32,8 @@ if __name__ == '__main__':
         incorr = [] 
         names = [] 
         for i in range(5):
-            if(seed == 0):
-                race_game = RaceGame()
-            else: 
-                race_game = RaceGame(roboCoach = rc)
+            
+            race_game = RaceGame(roboCoach = rc,coach = 'true')
             while race_game.running:
                 race_game.control_car()
             

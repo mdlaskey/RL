@@ -11,7 +11,7 @@ ys = 450
 xt = xs
 yt = ys
 dt = 0.75
-font = pygame.font.Font(None,24)
+
 msg = []
 msg += ["STOP"]
 msg += ["GEAR 1"]
@@ -25,24 +25,14 @@ GREEN = (  0,   255, 0)
 DIST_THRESH = 200 
 
 OFFSET = np.array([2100,1100])
+#OFFSET = np.array([1900,1100])
 
 n = len(msg)
 gears = []
-for i in range(n):
-    gears += [font.render(msg[i],1,(250,250,250))]
+
 speedo = []
 laps = []
-for i in range(101):
-    speedo += [font.render("SPEED "+str(i),1,(250,250,250))]
-    laps += [font.render("LAP "+str(i),1,(250,250,250))]
-pygame.mixer.init()
-sound = pygame.mixer.Sound("sound/racing_car.wav")
-sound.set_volume(0)
-sound.play(loops=-1)
-shiftup_sound = pygame.mixer.Sound("sound/shift_up.wav")
-idle_sound = pygame.mixer.Sound("sound/idle_rev.wav")
-idle_sound.set_volume(0)
-idle_sound.play(loops=-1)
+
 
 class Static_Sprite():
     @staticmethod
@@ -241,11 +231,7 @@ class Sprite():
         
 
         theta = self.view/57.296
-        if self.wobble :
-            idle_sound.set_volume(0.)
-        else :
-            idle_sound.set_volume(0)
-
+       
         if(state != None): 
             self.xf = state[0]+OFFSET[0]
             self.yf = state[1]+OFFSET[1]
@@ -264,7 +250,7 @@ class Sprite():
         self.xc = int(self.xf)
         self.yc = int(self.yf)
         
-        sound.set_volume(0)
+       
 
     def get_new_pos(self, new_view):
         speed = .95*self.speed + .05*(2.5*self.gear)

@@ -1,4 +1,3 @@
-__author__ = 'wesley'
 import os
 import pygame
 import IPython
@@ -9,31 +8,35 @@ import pdb
 import learner
 import copy
 
-pygame.init()
 import car
 import pickle
 import numpy as np
 import track_elipse as track
 import time
-import matplotlib as plt
+#import matplotlib as plt
 import itertools
 
 from Classes.SteeringWheel import SteeringWheel
 from Classes.OilDynamics import OilDynamics
 
 from Classes.Supervisor import Supervisor 
-from Agents.DAgger import Dagger
-from Agents.Soteria import Soteria
+#from Agents.DAgger import Dagger
+#from Agents.Soteria import Soteria
 
 from scipy.stats import norm
 
 from numpy import linalg as LA
+import cv2
 
 OFFSET = np.array([2100,1125])
-T = 1e10
-class RaceGame:
-    def __init__(self,samples = 10,human = True, roboCoach = None):
 
+T = 500
+#T = 10
+class RaceGame:
+    def __init__(self,samples = 10,human = True,coach = 'false',roboCoach = None,game='winter',timesteps=500):
+        print "BEFORE PYGAME INIT"
+        #pygame.init()
+        #T = timesteps
         self.x = 8
         self.y = 30
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" %(self.x,self.y)
@@ -45,19 +48,28 @@ class RaceGame:
         offset = np.array([350,300])
         self.grad = np.zeros(2)
         self.str_wheel = SteeringWheel(offset)
+        self.key_pressed = False
 
         #self.screen_size = (2000,1040)
-      
-        
+        if(coach == 'false'):
+            self.use_coach = False
+        else: 
+            self.use_coach = True
+         
         self.screen = pygame.display.set_mode(self.screen_size)#,pygame.FULLSCREEN)
         #pygame.display.toggle_fullscreen()
         self.screen.fill((0,192,0))
-        self.track_f = pygame.image.load('track.png')
-        self.visible_track = pygame.image.load('track_textured.png')
-        self.trk = self.track_f.get_at((0,0))
+        if(game == 'winter'):
+            self.visible_track = pygame.image.load('track_textured.png')
+            self.oil_on = True
+        else:
+            self.visible_track = pygame.image.load('track_textured_summer.png')
+            self.oil_on = False
+        #self.trk = self.track_f.get_at((0,0))
 
         
         self.cost = np.zeros(T)
+        self.inOil = np.zeros(T)
         self.controls = np.zeros([T,2])
         self.states = np.zeros([T,4])
         
@@ -78,7 +90,7 @@ class RaceGame:
         self.running = True
         
         self.red = car.Sprite()
-        self.font = pygame.font.Font(None,60)
+        #self.font = pygame.font.Font(None,60)
 
         self.iterations = 0
 
@@ -111,7 +123,6 @@ class RaceGame:
     def run_frame(self):
         # Update screen
         
-        self.iters += 1
         self.frames += 1
         self.car.frames = self.frames
 
@@ -126,13 +137,17 @@ class RaceGame:
         self.screen.fill((0,0,0))
 
         self.screen.blit(self.visible_track,(self.car.xs-self.red.xc,self.car.ys-self.red.yc))
-        #self.drawGoal(self.screen,(self.red.xc-self.car.xs),(self.red.yc-self.car.ys))
         self.Track.Draw(self.screen,(self.red.xc-self.car.xs,self.red.yc-self.car.ys))
         self.red.Draw(car.xs,car.ys,self.screen)
         self.str_wheel.drawSteering(self.screen,self.car.xs,self.car.ys)
-        if(self.roboCoach != None):
+
+        # if(self.roboCoach != None):
+        #     self.str_wheel.drawCorrections(self.screen,self.car.xs,self.car.ys,self.grad)
+
+        if(self.use_coach and self.oil.inOil(self.car_state)):
             self.str_wheel.drawCorrections(self.screen,self.car.xs,self.car.ys,self.grad)
-        self.state = pygame.surfarray.array3d(self.screen)
+            #self.str_wheel.optimalCor(self.screen,self.car.xs,self.car.ys,self.oil.help)
+
         pygame.display.flip()
 
 
@@ -156,6 +171,11 @@ class RaceGame:
             self.get_control()
         else: 
             self.control_car_step()
+
+        #cv2.imwrite("static/images/game.jpg", pygame.surfarray.array3d(self.screen))
+
+        return pygame.surfarray.array3d(self.screen)
+
    
 
 
@@ -164,7 +184,10 @@ class RaceGame:
 
     def get_control(self): 
 
+
         angle = self.str_wheel.getSteeringAngle()
+        if(not self.str_wheel.start): 
+            return
 
         control = np.zeros(2)
         control[1] = angle 
@@ -172,10 +195,14 @@ class RaceGame:
 
         key = pygame.key.get_pressed()
 
-        if(key[K_w]):
+        if(key[K_w] and not self.key_pressed):
             control[0] = 1.0
-        elif(key[K_s]):
+            self.key_pressed = True
+        elif(key[K_s] and not self.key_pressed):
             control[0] = -1.0
+            self.key_pressed = True
+        else: 
+            self.key_pressed = False
        
 
         self.controls[self.iters,:] = control
@@ -188,13 +215,16 @@ class RaceGame:
             print "Q VALUE, ", Q
 
 
-        self.car_state = self.supervisor.car.dynamics(self.car_state,control)
-        self.car_state = self.oil.dynamics(self.car_state)
+        #self.car_state = self.supervisor.car.dynamics(self.car_state,)
+        self.car_state = self.oil.dynamics(self.car_state,control,self.oil_on)
 
+        #Update Stats
         self.cost[self.iters] =  self.supervisor.getCost(self.car_state)
+        self.inOil[self.iters] = self.oil.inOil(self.car_state)
+        self.iters += 1
 
-        print "STATE", self.car_state
-
+        
+       
 
 
     def control_car_step(self, key_input=None):

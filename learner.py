@@ -23,8 +23,7 @@ import os
 
 import random
 
-# OpenCV
-import cv2
+
 
 class Learner():
 
