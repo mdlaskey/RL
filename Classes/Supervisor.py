@@ -4,7 +4,7 @@ import math
 import IPython
 from Classes.vehicle import Vehicle 
 from Tools.lqr import LQR 
-from Tools.MotionPlanning.car_model import OptimizeTraj
+#from Tools.MotionPlanning.car_model import OptimizeTraj
 
 """
 Continous dynamics car, contains cost function for elipse track
@@ -18,7 +18,7 @@ class Supervisor():
 	def __init__(self):
 		Q = np.eye(4)
 		R = np.eye(2)*1e-2
-		self.TOpt = OptimizeTraj()
+		#self.TOpt = OptimizeTraj()
 		self.car = Vehicle()
 		self.lqr = LQR()
 		[ref_x,ref_u] = self.genElipse()
