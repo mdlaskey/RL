@@ -24,12 +24,12 @@ class Supervisor():
 		[ref_x,ref_u] = self.genElipse()
 		self.elip = ref_x
 		#[self.ref_x,self.ref_u] = self.TOpt.trajOpt(ref_x,ref_u) 
-		[self.ref_x,self.ref_u] = self.TOpt.loadTraj()
+		#[self.ref_x,self.ref_u] = self.TOpt.loadTraj()
 		#self.testTraj()
 		self.init_state =  np.array([-395.36474681,  499.29913709,    3.3113592 ,    5        ])
 		#self.init_state = self.ref_x[:,0]
-		[As,Bs] = self.linearizeTraj(self.ref_x,self.ref_u)
-		self.Ks = self.lqr.ltv_lqr(As,Bs,Q,R,self.T)
+		#[As,Bs] = self.linearizeTraj(self.ref_x,self.ref_u)
+		#self.Ks = self.lqr.ltv_lqr(As,Bs,Q,R,self.T)
 
 		
 		#self.testController()
