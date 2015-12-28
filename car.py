@@ -24,8 +24,8 @@ GREEN = (  0,   255, 0)
 
 DIST_THRESH = 200 
 
-OFFSET = np.array([2100,1100])
-#OFFSET = np.array([1900,1100])
+#OFFSET = np.array([2100,1100])
+OFFSET = np.array([1900,1100])
 
 n = len(msg)
 gears = []

@@ -15,13 +15,14 @@ import copy
 if __name__ == '__main__':
 
     gammas = [1e-2]
-    ROUNDS = 3
+    ROUNDS = 1
     rc = pickle.load(open('/Users/michaelluskey/Documents/RL/LFD/AMT_Experiment/RoboCont.p'))
     sigma_results = []
    
     sigmas = [300,250,150, 50,1]
     # for sigma in sigmas:
     results = []
+    steps = [1,2,3,4,5]
 
     cost = []
     states = []
@@ -31,9 +32,9 @@ if __name__ == '__main__':
 
         incorr = [] 
         names = [] 
-        for i in range(5):
-            
-            race_game = RaceGame(roboCoach = rc,coach = 'true')
+        for i in range(len(steps)):
+            rc.steps = steps[i]
+            race_game = RaceGame(roboCoach = rc,coach = 'true',game = 'winter')
             while race_game.running:
                 race_game.control_car()
             
@@ -43,12 +44,17 @@ if __name__ == '__main__':
            
             controls.append(race_game.controls)
 
-        rc.calQ(cost,states,controls)
+
+
+        #rc.calQ(cost,states,controls)
 
         # plt.plot(race_game.cost)
         # plt.show()
         # sigma_results.append(results)
-    
+    total = []
+    for i in range(len(steps)): 
+        total.append(np.sum(cost[i]))
+    print total
 
     pickle.dump(results,open('results_expert.p','wb'))
     IPython.embed()

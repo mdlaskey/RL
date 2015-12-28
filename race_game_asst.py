@@ -81,7 +81,7 @@ class RaceGame:
         self.t = 0
         self.oil = OilDynamics(self.supervisor.car.dynamics)
         theta, pos, self.car_state = self.supervisor.getInitialState()
-
+        IPython.embed()
         self.car_state[3] = 5.0
         self.car_state[2] = 2.0
 

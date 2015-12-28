@@ -78,7 +78,7 @@ class OilDynamics:
 			val = self.pumpedBrakes(state)
 			if(val > 0.0):
 				print "VALUE ",val
-				control[1] = control[1]+.25#np.random.normal(val*0.1,val*0.01)
+				control[1] = control[1]+.18#np.random.normal(val*0.1,val*0.01)
 			
 
 		state = self.car_dyn(state,control)
@@ -88,9 +88,9 @@ class OilDynamics:
 			elif(state[3] < self.ref_speed-1): 
 				state[3] = self.ref_speed-1
 
-		# if(not self.inOil(state)):
-		# 	# if(state[3] > 6): 
-		# 	# 	state[3] = 6
+		if(not self.inOil(state)):
+			if(state[3] > 6): 
+				state[3] = 6
 		if(state[3] < 4): 
 			state[3] = 4
 
