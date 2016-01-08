@@ -5,11 +5,10 @@ import math
 import IPython
 import GPy
 from Classes.vehicle import Vehicle 
-from Classes.NeuralNet import NeuralNet
+
 from sklearn import preprocessing  
 from Tools.lqr import LQR 
 from sklearn import linear_model
-from Tools.MotionPlanning.car_model import OptimizeTraj
 from sklearn.kernel_ridge import KernelRidge
 import numpy as np
 from sklearn.gaussian_process import GaussianProcess
@@ -45,6 +44,40 @@ class RobotCont():
 				x_u[4:6] = controls[t]
 				print 'X ', x_u
 				X_U.append(x_u)
+
+		X_U = np.asarray(X_U)
+		print "XU SHAPE ", X_U.shape
+		Qvals = np.asarray(Qvals)
+		Qvals.shape += (1,)
+		self.scaler_s = preprocessing.StandardScaler().fit(X_U)
+		X_U = self.scaler_s.transform(X_U)
+		
+		IPython.embed()
+		kernel = GPy.kern.Poly(input_dim=6, variance=1., order=3)
+		self.Q = GPy.models.GPRegression(X_U,Qvals,kernel)
+		self.Q.optimize()
+		#self.Q = KernelRidge(alpha=1.0,kernel = 'poly',degree = 3)
+		
+		#self.Q.fit(X_U,Qvals)
+		#IPython.embed()
+
+	def updateQ(self,costs,states,controls):
+
+		Qvals = []
+		X_U = []
+	
+		prev_sum = 0.0
+		for t in range(states.shape[0]): 
+			exp_r = 0.0
+			for i in range(t,states.shape[0]):
+				exp_r += costs[i]*self.gamma**(i-t)
+			Qvals.append(exp_r)
+			print 'Q ', exp_r
+			x_u = np.zeros(6)
+			x_u[0:4] = states[t,:]
+			x_u[4:6] = controls[t,:]
+			print 'X ', x_u
+			X_U.append(x_u)
 
 		X_U = np.asarray(X_U)
 		print "XU SHAPE ", X_U.shape
@@ -144,6 +177,20 @@ class RobotCont():
 			return np.sign(control[0])
 		else: 
 			return 0 
+
+	def batchFeedBack(self):
+
+		fdBack = []
+		for x in range(1020,1400,20):
+			for y in range(20,165,20):
+				for v in range(4,6):
+					state = np.array([x,y,0.0,v])
+					control = self.getControlOpt(state).tolist()
+					print control 
+					fdBack.append([state.tolist(),control])
+
+		return fdBack
+
 
 
 
