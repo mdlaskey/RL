@@ -28,7 +28,7 @@ class RobotCont():
 	def __init__(self):
 		self.Qvals = []
 		self.X_U = []
-		self.kernel = GPy.kern.RBF(input_dim=4, variance=1e-3) #order=3)
+		self.kernel = GPy.kern.RBF(input_dim=4, variance=1) #order=3)
 	
 
 
@@ -178,6 +178,18 @@ class RobotCont():
 			control = self.getControlGrad(state,control)
 		print "CONTROL STEP ", control, " VAR ", self.evalQVar(state,control)
 		return control
+	def getControlSearch(self,state):
+		controls = [-1,0,1]
+		values = []
+
+		for control in controls:
+			val = self.evalQ(state,control)
+			values.append(val)
+
+		values = np.asarray(values)
+		
+		i = np.argmin(values)
+		return controls[i]
 
 	def getFeedback(self,state,control):
 
@@ -192,18 +204,19 @@ class RobotCont():
 		fdBack = []
 		for x in range(1020,1400,40):
 			for y in range(165,520,40):
-				for v in range(4,6):
+				for v in range(3,5):
 					state = np.array([x,y,v])
 					x_gp = -(x-1700)+(512.0/2-1385.0)
 					y_gp = (y-1700)-(512.0/2-1187)
 					state_gp = np.array([x_gp,y_gp,v])
-			
+					control = []
 					control = self.getControlOpt(state_gp).tolist()
 					print "CONTROL ", control, " STATE ", state_gp, 
-					if(np.abs(control[0])> -1):
+					if(np.abs(control[0])> -6):
 						control.append(1)
 					else:
 						control.append(0)
+
 					#control.append(self.evalQVar(state,control[0])< 1e10)
 					fdBack.append([state.tolist(),control])
 
