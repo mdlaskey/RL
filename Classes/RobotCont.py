@@ -23,6 +23,7 @@ class RobotCont():
 	dt = 1
 	gamma = 0.05
 	steps = 0
+	initialized = False
 
 
 	def __init__(self):
@@ -96,7 +97,7 @@ class RobotCont():
 		
 		self.Q = GPy.models.GPRegression(X_U,Qvals,self.kernel)
 		self.Q.optimize()
-		
+		initialized = True
 		#self.Q = KernelRidge(alpha=1.0,kernel = 'poly',degree = 3)
 		
 		#self.Q.fit(X_U,Qvals)
@@ -202,6 +203,18 @@ class RobotCont():
 	def batchFeedBack(self):
 
 		fdBack = []
+
+		if(not self.initialized):
+			for x in range(1020,1400,40):
+				for y in range(165,520,40):
+					for v in range(3,5):
+						state = np.array([x,y,v])
+						control = [0,1]
+						fdBack.append([state.tolist(),control])
+			return fdBack
+
+
+
 		for x in range(1020,1400,40):
 			for y in range(165,520,40):
 				for v in range(3,5):
